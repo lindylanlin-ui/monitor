@@ -1,0 +1,740 @@
+# Grafana-managed alert rules。
+# 這份檔案是目前正式生效的告警規則來源。
+# 目前架構為「Prometheus 抓 metrics + Grafana Alerting 判斷與通知」，
+# 因此 CPU / 記憶體 / 磁碟 / target down / probe failed 等門檻，
+# 都應該在這份檔案修改，而不是去改 prometheus/rules/infrastructure-alerts.yml。
+#
+# 重點提醒：
+# 1. `for:` 代表條件要持續多久才真正觸發告警
+# 2. `params:` 代表比較門檻值，例如 85、90
+# 3. 修改後要重新載入 Grafana，例如：
+#    docker compose up -d --force-recreate grafana
+apiVersion: 1
+
+groups:
+  - orgId: 1
+    name: availability
+    folder: Infrastructure Alerts
+    interval: 30s
+    rules:
+      - uid: target_down
+        title: TargetDown
+        condition: B
+        data:
+          - refId: A
+            datasourceUid: prometheus
+            relativeTimeRange:
+              from: 600
+              to: 0
+            model:
+              datasource:
+                type: prometheus
+                uid: prometheus
+              editorMode: code
+              expr: max by (instance, job) (up{job=~"node-exporter|windows-exporter|cadvisor|snmp"})
+              instant: true
+              intervalMs: 1000
+              maxDataPoints: 43200
+              range: false
+              refId: A
+          - refId: B
+            datasourceUid: __expr__
+            relativeTimeRange:
+              from: 0
+              to: 0
+            model:
+              conditions:
+                - evaluator:
+                    params:
+                      - 1
+                    type: lt
+                  operator:
+                    type: and
+                  query:
+                    params:
+                      - A
+                  reducer:
+                    params: []
+                    type: last
+                  type: query
+              datasource:
+                type: __expr__
+                uid: __expr__
+              expression: A
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: B
+              type: classic_conditions
+        dashboardUid: infra-overview
+        panelId: 1
+        noDataState: OK
+        executionErrorState: Error
+        for: 2m
+        annotations:
+          summary: "{{ range $k, $v := $values }}{{ if (match \"B[0-9]+\" $k) }}{{ if index $v.Labels \"instance\" }}{{ index $v.Labels \"instance\" }} is unreachable{{ else if index $v.Labels \"job\" }}{{ index $v.Labels \"job\" }} target is unreachable{{ else }}Prometheus target is unreachable{{ end }}{{ end }}{{ end }}"
+          description: "{{ range $k, $v := $values }}{{ if (match \"B[0-9]+\" $k) }}{{ if index $v.Labels \"instance\" }}Prometheus target {{ index $v.Labels \"instance\" }}{{ else }}A Prometheus target{{ end }}{{ if index $v.Labels \"job\" }} (job={{ index $v.Labels \"job\" }}){{ end }} has been down for more than 2 minutes.{{ end }}{{ end }}"
+        labels:
+          severity: critical
+        isPaused: false
+        notification_settings:
+          receiver: telegram-monitoring
+          group_by:
+            - alertname
+            - grafana_folder
+            - instance
+          group_wait: 30s
+          group_interval: 5m
+          repeat_interval: 4h
+
+      - uid: service_probe_failed
+        title: ServiceProbeFailed
+        condition: B
+        data:
+          - refId: A
+            datasourceUid: prometheus
+            relativeTimeRange:
+              from: 600
+              to: 0
+            model:
+              datasource:
+                type: prometheus
+                uid: prometheus
+              editorMode: code
+              expr: max by (instance, job) (probe_success)
+              instant: true
+              intervalMs: 1000
+              maxDataPoints: 43200
+              range: false
+              refId: A
+          - refId: B
+            datasourceUid: __expr__
+            relativeTimeRange:
+              from: 0
+              to: 0
+            model:
+              conditions:
+                - evaluator:
+                    params:
+                      - 1
+                    type: lt
+                  operator:
+                    type: and
+                  query:
+                    params:
+                      - A
+                  reducer:
+                    params: []
+                    type: last
+                  type: query
+              datasource:
+                type: __expr__
+                uid: __expr__
+              expression: A
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: B
+              type: classic_conditions
+        dashboardUid: infra-overview
+        panelId: 2
+        noDataState: OK
+        executionErrorState: Error
+        for: 2m
+        annotations:
+          summary: "{{ range $k, $v := $values }}{{ if (match \"B[0-9]+\" $k) }}{{ if index $v.Labels \"instance\" }}{{ index $v.Labels \"instance\" }} probe failed{{ else }}Service probe failed{{ end }}{{ end }}{{ end }}"
+          description: "{{ range $k, $v := $values }}{{ if (match \"B[0-9]+\" $k) }}{{ if index $v.Labels \"instance\" }}Blackbox probe for {{ index $v.Labels \"instance\" }}{{ else }}A blackbox probe{{ end }} has failed for more than 2 minutes.{{ end }}{{ end }}"
+        labels:
+          severity: critical
+        isPaused: false
+        notification_settings:
+          receiver: telegram-monitoring
+          group_by:
+            - alertname
+            - grafana_folder
+            - instance
+          group_wait: 30s
+          group_interval: 5m
+          repeat_interval: 4h
+
+  - orgId: 1
+    name: host-and-service-health
+    folder: Infrastructure Alerts
+    interval: 1m
+    rules:
+      - uid: linux_cpu_high
+        title: LinuxCpuHigh
+        condition: B
+        data:
+          - refId: A
+            datasourceUid: prometheus
+            relativeTimeRange:
+              from: 600
+              to: 0
+            model:
+              datasource:
+                type: prometheus
+                uid: prometheus
+              editorMode: code
+              expr: 100 * (1 - avg by (instance) (rate(node_cpu_seconds_total{job="node-exporter", mode="idle"}[5m])))
+              instant: true
+              intervalMs: 1000
+              maxDataPoints: 43200
+              range: false
+              refId: A
+          - refId: B
+            datasourceUid: __expr__
+            relativeTimeRange:
+              from: 0
+              to: 0
+            model:
+              conditions:
+                - evaluator:
+                    params:
+                      - 85
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params:
+                      - A
+                  reducer:
+                    params: []
+                    type: last
+                  type: query
+              datasource:
+                type: __expr__
+                uid: __expr__
+              expression: A
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: B
+              type: classic_conditions
+        dashboardUid: infra-overview
+        panelId: 3
+        noDataState: NoData
+        executionErrorState: Error
+        for: 5m
+        annotations:
+          summary: "{{ range $k, $v := $values }}{{ if (match \"B[0-9]+\" $k) }}{{ if index $v.Labels \"instance\" }}{{ index $v.Labels \"instance\" }} CPU usage is high{{ else }}Linux CPU usage is high{{ end }}{{ end }}{{ end }}"
+          description: "Linux CPU utilization stayed above 85% for 5 minutes."
+        labels:
+          severity: warning
+        isPaused: false
+        notification_settings:
+          receiver: telegram-monitoring
+          group_by: [alertname, grafana_folder, instance]
+          group_wait: 30s
+          group_interval: 5m
+          repeat_interval: 4h
+
+      - uid: linux_memory_high
+        title: LinuxMemoryHigh
+        condition: B
+        data:
+          - refId: A
+            datasourceUid: prometheus
+            relativeTimeRange:
+              from: 600
+              to: 0
+            model:
+              datasource:
+                type: prometheus
+                uid: prometheus
+              editorMode: code
+              expr: 100 * (1 - (node_memory_MemAvailable_bytes{job="node-exporter"} / node_memory_MemTotal_bytes{job="node-exporter"}))
+              instant: true
+              intervalMs: 1000
+              maxDataPoints: 43200
+              range: false
+              refId: A
+          - refId: B
+            datasourceUid: __expr__
+            relativeTimeRange:
+              from: 0
+              to: 0
+            model:
+              conditions:
+                - evaluator:
+                    params: [90]
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params: [A]
+                  reducer:
+                    params: []
+                    type: last
+                  type: query
+              datasource:
+                type: __expr__
+                uid: __expr__
+              expression: A
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: B
+              type: classic_conditions
+        dashboardUid: infra-overview
+        panelId: 4
+        noDataState: NoData
+        executionErrorState: Error
+        for: 5m
+        annotations:
+          summary: "{{ range $k, $v := $values }}{{ if (match \"B[0-9]+\" $k) }}{{ if index $v.Labels \"instance\" }}{{ index $v.Labels \"instance\" }} memory usage is high{{ else }}Linux memory usage is high{{ end }}{{ end }}{{ end }}"
+          description: "Linux memory utilization stayed above 90% for 5 minutes."
+        labels:
+          severity: warning
+        isPaused: false
+        notification_settings:
+          receiver: telegram-monitoring
+          group_by: [alertname, grafana_folder, instance]
+          group_wait: 30s
+          group_interval: 5m
+          repeat_interval: 4h
+
+      - uid: linux_root_disk_high
+        title: LinuxRootDiskHigh
+        condition: B
+        data:
+          - refId: A
+            datasourceUid: prometheus
+            relativeTimeRange:
+              from: 600
+              to: 0
+            model:
+              datasource:
+                type: prometheus
+                uid: prometheus
+              editorMode: code
+              expr: 100 * (1 - (node_filesystem_avail_bytes{job="node-exporter", mountpoint="/", fstype!~"tmpfs|overlay|squashfs"} / node_filesystem_size_bytes{job="node-exporter", mountpoint="/", fstype!~"tmpfs|overlay|squashfs"}))
+              instant: true
+              intervalMs: 1000
+              maxDataPoints: 43200
+              range: false
+              refId: A
+          - refId: B
+            datasourceUid: __expr__
+            relativeTimeRange:
+              from: 0
+              to: 0
+            model:
+              conditions:
+                - evaluator:
+                    params: [85]
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params: [A]
+                  reducer:
+                    params: []
+                    type: last
+                  type: query
+              datasource:
+                type: __expr__
+                uid: __expr__
+              expression: A
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: B
+              type: classic_conditions
+        noDataState: NoData
+        executionErrorState: Error
+        for: 10m
+        annotations:
+          summary: "{{ range $k, $v := $values }}{{ if (match \"B[0-9]+\" $k) }}{{ if index $v.Labels \"instance\" }}{{ index $v.Labels \"instance\" }} root disk usage is high{{ else }}Linux root disk usage is high{{ end }}{{ end }}{{ end }}"
+          description: "Root filesystem utilization stayed above 85% for 10 minutes."
+        labels:
+          severity: warning
+        isPaused: false
+        notification_settings:
+          receiver: telegram-monitoring
+          group_by: [alertname, grafana_folder, instance]
+          group_wait: 30s
+          group_interval: 5m
+          repeat_interval: 4h
+
+      - uid: windows_cpu_high
+        title: WindowsCpuHigh
+        condition: B
+        data:
+          - refId: A
+            datasourceUid: prometheus
+            relativeTimeRange:
+              from: 600
+              to: 0
+            model:
+              datasource:
+                type: prometheus
+                uid: prometheus
+              editorMode: code
+              expr: 100 * (1 - avg by (instance) (rate(windows_cpu_time_total{job="windows-exporter", mode="idle"}[5m])))
+              instant: true
+              intervalMs: 1000
+              maxDataPoints: 43200
+              range: false
+              refId: A
+          - refId: B
+            datasourceUid: __expr__
+            relativeTimeRange:
+              from: 0
+              to: 0
+            model:
+              conditions:
+                - evaluator:
+                    params: [85]
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params: [A]
+                  reducer:
+                    params: []
+                    type: last
+                  type: query
+              datasource:
+                type: __expr__
+                uid: __expr__
+              expression: A
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: B
+              type: classic_conditions
+        dashboardUid: infra-overview
+        panelId: 5
+        noDataState: NoData
+        executionErrorState: Error
+        for: 5m
+        annotations:
+          summary: "{{ range $k, $v := $values }}{{ if (match \"B[0-9]+\" $k) }}{{ if index $v.Labels \"instance\" }}{{ index $v.Labels \"instance\" }} CPU usage is high{{ else }}Windows CPU usage is high{{ end }}{{ end }}{{ end }}"
+          description: "Windows CPU utilization stayed above 85% for 5 minutes."
+        labels:
+          severity: warning
+        isPaused: false
+        notification_settings:
+          receiver: telegram-monitoring
+          group_by: [alertname, grafana_folder, instance]
+          group_wait: 30s
+          group_interval: 5m
+          repeat_interval: 4h
+
+      - uid: windows_memory_high
+        title: WindowsMemoryHigh
+        condition: B
+        data:
+          - refId: A
+            datasourceUid: prometheus
+            relativeTimeRange:
+              from: 600
+              to: 0
+            model:
+              datasource:
+                type: prometheus
+                uid: prometheus
+              editorMode: code
+              expr: 100 * (1 - (windows_memory_physical_free_bytes{job="windows-exporter"} / windows_memory_physical_total_bytes{job="windows-exporter"}))
+              instant: true
+              intervalMs: 1000
+              maxDataPoints: 43200
+              range: false
+              refId: A
+          - refId: B
+            datasourceUid: __expr__
+            relativeTimeRange:
+              from: 0
+              to: 0
+            model:
+              conditions:
+                - evaluator:
+                    params: [90]
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params: [A]
+                  reducer:
+                    params: []
+                    type: last
+                  type: query
+              datasource:
+                type: __expr__
+                uid: __expr__
+              expression: A
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: B
+              type: classic_conditions
+        dashboardUid: infra-overview
+        panelId: 6
+        noDataState: NoData
+        executionErrorState: Error
+        for: 5m
+        annotations:
+          summary: "{{ range $k, $v := $values }}{{ if (match \"B[0-9]+\" $k) }}{{ if index $v.Labels \"instance\" }}{{ index $v.Labels \"instance\" }} memory usage is high{{ else }}Windows memory usage is high{{ end }}{{ end }}{{ end }}"
+          description: "Windows memory utilization stayed above 90% for 5 minutes."
+        labels:
+          severity: warning
+        isPaused: false
+        notification_settings:
+          receiver: telegram-monitoring
+          group_by: [alertname, grafana_folder, instance]
+          group_wait: 30s
+          group_interval: 5m
+          repeat_interval: 4h
+
+      - uid: windows_disk_high
+        title: WindowsDiskHigh
+        condition: B
+        data:
+          - refId: A
+            datasourceUid: prometheus
+            relativeTimeRange:
+              from: 600
+              to: 0
+            model:
+              datasource:
+                type: prometheus
+                uid: prometheus
+              editorMode: code
+              expr: 100 * (1 - (windows_logical_disk_free_bytes{job="windows-exporter", volume!~"HarddiskVolume.*|_Total"} / windows_logical_disk_size_bytes{job="windows-exporter", volume!~"HarddiskVolume.*|_Total"}))
+              instant: true
+              intervalMs: 1000
+              maxDataPoints: 43200
+              range: false
+              refId: A
+          - refId: B
+            datasourceUid: __expr__
+            relativeTimeRange:
+              from: 0
+              to: 0
+            model:
+              conditions:
+                - evaluator:
+                    params: [85]
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params: [A]
+                  reducer:
+                    params: []
+                    type: last
+                  type: query
+              datasource:
+                type: __expr__
+                uid: __expr__
+              expression: A
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: B
+              type: classic_conditions
+        noDataState: NoData
+        executionErrorState: Error
+        for: 10m
+        annotations:
+          summary: "{{ range $k, $v := $values }}{{ if (match \"B[0-9]+\" $k) }}{{ if index $v.Labels \"instance\" }}{{ index $v.Labels \"instance\" }} disk usage is high{{ else }}Windows disk usage is high{{ end }}{{ end }}{{ end }}"
+          description: "{{ range $k, $v := $values }}{{ if (match \"B[0-9]+\" $k) }}Windows disk {{ if index $v.Labels \"volume\" }}{{ index $v.Labels \"volume\" }}{{ else }}volume{{ end }} stayed above 85% utilization for 10 minutes.{{ end }}{{ end }}"
+        labels:
+          severity: warning
+        isPaused: false
+        notification_settings:
+          receiver: telegram-monitoring
+          group_by: [alertname, grafana_folder, instance]
+          group_wait: 30s
+          group_interval: 5m
+          repeat_interval: 4h
+
+  - orgId: 1
+    name: network-edge
+    folder: Infrastructure Alerts
+    interval: 1m
+    rules:
+      - uid: snmp_cpu_high
+        title: SnmpCpuHigh
+        condition: B
+        data:
+          - refId: A
+            datasourceUid: prometheus
+            relativeTimeRange:
+              from: 600
+              to: 0
+            model:
+              datasource:
+                type: prometheus
+                uid: prometheus
+              editorMode: code
+              expr: avg by (instance) (hrProcessorLoad{job="snmp"})
+              instant: true
+              intervalMs: 1000
+              maxDataPoints: 43200
+              range: false
+              refId: A
+          - refId: B
+            datasourceUid: __expr__
+            relativeTimeRange:
+              from: 0
+              to: 0
+            model:
+              conditions:
+                - evaluator:
+                    params: [85]
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params: [A]
+                  reducer:
+                    params: []
+                    type: last
+                  type: query
+              datasource:
+                type: __expr__
+                uid: __expr__
+              expression: A
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: B
+              type: classic_conditions
+        dashboardUid: network-edge-and-nas
+        panelId: 1
+        noDataState: NoData
+        executionErrorState: Error
+        for: 10m
+        annotations:
+          summary: "{{ range $k, $v := $values }}{{ if (match \"B[0-9]+\" $k) }}{{ if index $v.Labels \"instance\" }}{{ index $v.Labels \"instance\" }} CPU usage is high{{ else }}SNMP CPU usage is high{{ end }}{{ end }}{{ end }}"
+          description: "SNMP CPU utilization stayed above 85% for 10 minutes."
+        labels:
+          severity: warning
+        isPaused: false
+        notification_settings:
+          receiver: telegram-monitoring
+          group_by: [alertname, grafana_folder, instance]
+          group_wait: 30s
+          group_interval: 5m
+          repeat_interval: 4h
+
+      - uid: snmp_memory_high
+        title: SnmpMemoryHigh
+        condition: B
+        data:
+          - refId: A
+            datasourceUid: prometheus
+            relativeTimeRange:
+              from: 600
+              to: 0
+            model:
+              datasource:
+                type: prometheus
+                uid: prometheus
+              editorMode: code
+              expr: 100 * (1 - (memAvailReal{job="snmp"} / memTotalReal{job="snmp"}))
+              instant: true
+              intervalMs: 1000
+              maxDataPoints: 43200
+              range: false
+              refId: A
+          - refId: B
+            datasourceUid: __expr__
+            relativeTimeRange:
+              from: 0
+              to: 0
+            model:
+              conditions:
+                - evaluator:
+                    params: [90]
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params: [A]
+                  reducer:
+                    params: []
+                    type: last
+                  type: query
+              datasource:
+                type: __expr__
+                uid: __expr__
+              expression: A
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: B
+              type: classic_conditions
+        dashboardUid: network-edge-and-nas
+        panelId: 2
+        noDataState: NoData
+        executionErrorState: Error
+        for: 10m
+        annotations:
+          summary: "{{ range $k, $v := $values }}{{ if (match \"B[0-9]+\" $k) }}{{ if index $v.Labels \"instance\" }}{{ index $v.Labels \"instance\" }} memory usage is high{{ else }}SNMP memory usage is high{{ end }}{{ end }}{{ end }}"
+          description: "SNMP memory utilization stayed above 90% for 10 minutes."
+        labels:
+          severity: warning
+        isPaused: false
+        notification_settings:
+          receiver: telegram-monitoring
+          group_by: [alertname, grafana_folder, instance]
+          group_wait: 30s
+          group_interval: 5m
+          repeat_interval: 4h
+
+      - uid: synology_disk_health_problem
+        title: SynologyDiskHealthProblem
+        condition: B
+        data:
+          - refId: A
+            datasourceUid: prometheus
+            relativeTimeRange:
+              from: 600
+              to: 0
+            model:
+              datasource:
+                type: prometheus
+                uid: prometheus
+              editorMode: code
+              expr: diskHealthStatus{job="snmp"} != 1
+              instant: true
+              intervalMs: 1000
+              maxDataPoints: 43200
+              range: false
+              refId: A
+          - refId: B
+            datasourceUid: __expr__
+            relativeTimeRange:
+              from: 0
+              to: 0
+            model:
+              conditions:
+                - evaluator:
+                    params: [0]
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params: [A]
+                  reducer:
+                    params: []
+                    type: last
+                  type: query
+              datasource:
+                type: __expr__
+                uid: __expr__
+              expression: A
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: B
+              type: classic_conditions
+        dashboardUid: network-edge-and-nas
+        panelId: 7
+        noDataState: NoData
+        executionErrorState: Error
+        for: 10m
+        annotations:
+          summary: "{{ range $k, $v := $values }}{{ if (match \"B[0-9]+\" $k) }}{{ if index $v.Labels \"instance\" }}{{ index $v.Labels \"instance\" }}{{ else }}Synology{{ end }} disk {{ if index $v.Labels \"diskID\" }}{{ index $v.Labels \"diskID\" }}{{ else }}unknown{{ end }} health warning{{ end }}{{ end }}"
+          description: "{{ range $k, $v := $values }}{{ if (match \"B[0-9]+\" $k) }}Synology reported a non-healthy disk state for disk {{ if index $v.Labels \"diskID\" }}{{ index $v.Labels \"diskID\" }}{{ else }}unknown{{ end }}.{{ end }}{{ end }}"
+        labels:
+          severity: critical
+        isPaused: false
+        notification_settings:
+          receiver: telegram-monitoring
+          group_by: [alertname, grafana_folder, instance]
+          group_wait: 30s
+          group_interval: 5m
+          repeat_interval: 4h

@@ -11,8 +11,13 @@
 - 多個 Docker Compose 專案的容器監控
 - HTTP / TCP 服務可用性探測
 - Grafana dashboard 自動匯入
-- Prometheus 告警規則
-- Alertmanager 告警路由骨架
+- Grafana Alerting 告警規則與 Telegram 通知
+
+目前版本的告警流程已改為：
+
+- `Prometheus` 專心負責抓 metrics
+- `Grafana Alerting` 負責告警規則、通知與 Telegram 發送
+- 原本的 `Prometheus rule_files + Alertmanager` 流程已停用，不再是正式執行路徑
 
 如果你之後回頭看設定時忘記某個欄位是做什麼用，除了本 README，也可以直接查：
 
@@ -27,13 +32,11 @@
 - `Prometheus`
   - 定期抓取各 exporter 與設備指標
   - 保存時間序列資料
-  - 執行告警規則
 - `Grafana`
   - 顯示 dashboard
   - 讓你用圖表觀察趨勢、異常與容量變化
-- `Alertmanager`
-  - 接收 Prometheus 告警
-  - 依條件分組、靜默、轉送通知
+  - 執行 Grafana-managed alert rules
+  - 透過 Telegram contact point 發送告警
 - `node-exporter`
   - 監控 Linux 主機 CPU、RAM、Disk、Network、filesystem、systemd
 - `cAdvisor`
@@ -53,29 +56,37 @@
   - 控制版本、port、Grafana 帳密、Prometheus 保留天數
 - `prometheus/prometheus.yml`
   - Prometheus 主設定
-  - 決定抓哪些 job、告警送去哪裡
-- `prometheus/rules/infrastructure-alerts.yml`
-  - 告警規則
-  - 監控 CPU、記憶體、磁碟、服務可用性
+  - 決定抓哪些 job 與 target
 - `prometheus/file_sd/*.yml`
   - 可擴充的 target 清單
   - 未來新增設備時主要改這裡
 - `prometheus/blackbox.yml`
   - Blackbox probe 模組設定
-- `alertmanager/alertmanager.yml`
-  - 告警路由與 receiver 骨架
+- `grafana/provisioning/alerting/rules.yml`
+  - Grafana-managed alert rules
+  - 監控 CPU、記憶體、磁碟、服務可用性
+- `grafana/provisioning/alerting/templates.yml`
+  - Grafana Alerting 通知模板
+  - 用來自訂 Telegram 訊息內容，避免預設訊息太冗長或出現 `[no value]`
+- `grafana/templates/contact-points.yml.tpl`
+  - Grafana Telegram contact point 模板
+  - 真正敏感值會在啟動時寫入本機 `grafana/runtime/`
 - `snmp/auths.example.yml`
   - SNMP 驗證模板
   - 正式用法是複製成 `snmp/auths.local.yml`
 - `snmp/modules.yml`
   - 本專案實際會用到的 SNMP 模組集合
 - `grafana/provisioning/*`
-  - Grafana 自動匯入資料來源與 dashboard 的設定
+- `grafana/provisioning/*`
+  - Grafana 自動匯入資料來源、dashboard 與 alert rule 的靜態模板
+- `grafana/runtime/*`
+  - Grafana 啟動時產生的 runtime provisioning
+  - 含本機 Telegram 設定，已排除 Git
 - `grafana/dashboards/*.json`
   - 實際 Grafana dashboard 定義
 - `docs/CONFIG-REFERENCE.md`
   - 設定欄位與維護邏輯查表手冊
-- `prometheus/data`、`alertmanager/data`、`grafana/data`、`snmp/generated`
+- `prometheus/data`、`grafana/data`、`grafana/runtime`、`snmp/generated`
   - 實際執行時的資料目錄，保留在專案內但不進 Git
 
 ## 3. 部署前你要準備什麼
@@ -131,19 +142,19 @@ make bootstrap
 - `prometheus/file_sd/windows-hosts.local.yml`
 - `prometheus/file_sd/snmp-devices.local.yml`
 - `prometheus/data`
-- `alertmanager/data`
 - `grafana/data`
+- `grafana/runtime`
 - `snmp/generated`
-- `secrets/alertmanager/telegram_bot_token`
-- `secrets/alertmanager/telegram_chat_id`
+- `secrets/grafana-alerting/telegram_bot_token`
+- `secrets/grafana-alerting/telegram_chat_id`
 
 ### 步驟 1-1：資料目錄現在會放在專案內
 
 本專案目前使用 bind mount，把執行資料直接存到專案目錄：
 
 - `prometheus/data`
-- `alertmanager/data`
 - `grafana/data`
+- `grafana/runtime`
 - `snmp/generated`
 
 這些資料夾會保留容器執行資料，但已加入 `.gitignore`，不會被推上 GitHub。
@@ -169,7 +180,6 @@ make bootstrap
 如果主機已有 port 衝突，也可以改：
 
 - `PROMETHEUS_PORT`
-- `ALERTMANAGER_PORT`
 - `GRAFANA_PORT`
 
 注意：
@@ -226,12 +236,34 @@ make bootstrap
 
 ### 步驟 7：設定告警通知
 
-打開 `alertmanager/alertmanager.yml`。
+目前這個專案的告警由 `Grafana Alerting` 管理，不再使用 `Alertmanager`。
 
-目前專案已經預設把 `critical` 等級告警送往 Telegram，但真正會不會送出，取決於你是否正確填入本機 secrets 檔案：
+兩份看起來都像「告警規則檔」的檔案，現在角色如下：
 
-- `secrets/alertmanager/telegram_bot_token`
-- `secrets/alertmanager/telegram_chat_id`
+- `grafana/provisioning/alerting/rules.yml`
+  - 目前正式生效的 Grafana 告警規則檔
+  - CPU、記憶體、磁碟、target down、probe failed 的閥值與 `for` 持續時間都在這裡改
+- `prometheus/rules/infrastructure-alerts.yml`
+  - 舊版 `Prometheus rule_files + Alertmanager` 架構留下的歷史參考檔
+  - 目前不會被正式載入，除非你未來要把舊架構重新啟用
+
+你真正需要準備的是本機 Telegram secrets 檔案：
+
+- `secrets/grafana-alerting/telegram_bot_token`
+- `secrets/grafana-alerting/telegram_chat_id`
+
+Grafana 啟動時會做這些事：
+
+- 從上述本機 secrets 讀取 bot token 與 chat id
+- 產生本機 `grafana/runtime/alerting/contact-points.yml`
+- 載入 `grafana/provisioning/alerting/rules.yml` 內的 Grafana-managed alert rules
+- 透過 `telegram-monitoring` contact point 發送通知
+
+補充：
+
+- 規則會出現在 Grafana UI 的 Alerting 頁面
+- 但本專案採用 provisioning 管理，正式修改請改 `grafana/provisioning/alerting/rules.yml`
+- 改完後執行 `docker compose up -d --force-recreate grafana`
 
 ### 步驟 7-1：用 BotFather 建立 Telegram Bot
 
@@ -249,7 +281,7 @@ make bootstrap
 把這組 token 寫入本機檔案：
 
 ```bash
-printf '%s\n' '你的_bot_token' > secrets/alertmanager/telegram_bot_token
+printf '%s\n' '你的_bot_token' > secrets/grafana-alerting/telegram_bot_token
 ```
 
 ### 步驟 7-2：決定通知對象是私人聊天還是群組
@@ -276,7 +308,7 @@ printf '%s\n' '你的_bot_token' > secrets/alertmanager/telegram_bot_token
 然後執行：
 
 ```bash
-TOKEN="$(cat secrets/alertmanager/telegram_bot_token)"
+TOKEN="$(cat secrets/grafana-alerting/telegram_bot_token)"
 curl -s "https://api.telegram.org/bot${TOKEN}/getUpdates" | jq
 ```
 
@@ -287,19 +319,19 @@ curl -s "https://api.telegram.org/bot${TOKEN}/getUpdates" | jq
 把找到的數值寫入本機檔案：
 
 ```bash
-printf '%s\n' '你的_chat_id' > secrets/alertmanager/telegram_chat_id
+printf '%s\n' '你的_chat_id' > secrets/grafana-alerting/telegram_chat_id
 ```
 
 ### 步驟 7-4：先直接測試 Telegram API
 
-在測 Alertmanager 前，建議先直接用 Telegram API 發一則測試訊息：
+在測 Grafana Alerting 前，建議先直接用 Telegram API 發一則測試訊息：
 
 ```bash
-TOKEN="$(cat secrets/alertmanager/telegram_bot_token)"
-CHAT_ID="$(cat secrets/alertmanager/telegram_chat_id)"
+TOKEN="$(cat secrets/grafana-alerting/telegram_bot_token)"
+CHAT_ID="$(cat secrets/grafana-alerting/telegram_chat_id)"
 curl -s "https://api.telegram.org/bot${TOKEN}/sendMessage" \
   --data-urlencode "chat_id=${CHAT_ID}" \
-  --data-urlencode "text=Alertmanager Telegram 測試訊息"
+  --data-urlencode "text=Grafana Alerting Telegram 測試訊息"
 ```
 
 如果你收得到訊息，代表：
@@ -308,12 +340,12 @@ curl -s "https://api.telegram.org/bot${TOKEN}/sendMessage" \
 - chat id 正確
 - bot 對目標聊天有發送權限
 
-### 步驟 7-5：套用 Alertmanager 設定
+### 步驟 7-5：套用 Grafana Alerting 設定
 
-完成 secrets 設定後，重新啟動 Alertmanager：
+完成 secrets 設定後，重新建立 Grafana：
 
 ```bash
-docker compose up -d alertmanager
+docker compose up -d --force-recreate grafana
 ```
 
 如果整套系統還沒啟動，也可以直接：
@@ -322,24 +354,32 @@ docker compose up -d alertmanager
 make up
 ```
 
-### 步驟 7-6：驗證 Alertmanager 設定
+### 步驟 7-6：驗證 Grafana Alerting 設定
 
 執行：
 
 ```bash
-docker run --rm --entrypoint amtool \
-  -v "$PWD/alertmanager:/etc/alertmanager" \
-  prom/alertmanager:v0.33.0 \
-  check-config /etc/alertmanager/alertmanager.yml
+docker compose ps grafana
+docker compose logs --tail 100 grafana
 ```
 
 再確認本機 secrets 檔案存在：
 
 ```bash
-ls -l secrets/alertmanager
+ls -l secrets/grafana-alerting
 ```
 
-### 步驟 7-7：實際測試告警是否真的會送到 Telegram
+如果 Grafana 啟動正常，再確認 contact point 與 alert rules 已載入：
+
+```bash
+set -a && . ./.env && set +a
+curl -fsS -u "$GRAFANA_ADMIN_USER:$GRAFANA_ADMIN_PASSWORD" \
+  "http://127.0.0.1:${GRAFANA_PORT}/api/v1/provisioning/contact-points" | jq
+curl -fsS -u "$GRAFANA_ADMIN_USER:$GRAFANA_ADMIN_PASSWORD" \
+  "http://127.0.0.1:${GRAFANA_PORT}/api/v1/provisioning/alert-rules" | jq
+```
+
+### 步驟 7-7：實際測試 Grafana 告警是否真的會送到 Telegram
 
 建議用低風險方式測試，不要直接破壞正式服務。
 
@@ -618,12 +658,13 @@ snmpwalk -v2c -c <community> <ER-X_IP> 1.3.6.1.2.1.1.1.0
 
 ## 6. Telegram 告警的設定原理
 
-這個專案的 Telegram 告警採用「本機 secrets 檔案」設計：
+這個專案的 Telegram 告警採用「本機 secrets + runtime provisioning」設計：
 
-- repo 內保存可公開的 Alertmanager 設定
-- 真正敏感的 bot token / chat id 只放在本機 `secrets/alertmanager/`
-- `docker-compose.yml` 會把本機 `secrets/alertmanager` 掛進 Alertmanager 容器
-- `alertmanager.yml` 透過 `bot_token_file` 與 `chat_id_file` 讀取內容
+- repo 內只保存可公開的 Grafana alerting 模板
+- 真正敏感的 bot token / chat id 只放在本機 `secrets/grafana-alerting/`
+- `docker-compose.yml` 會把本機 `secrets/` 掛進 Grafana 容器
+- 啟動腳本會把敏感值寫進本機 `grafana/runtime/alerting/contact-points.yml`
+- `grafana/runtime/` 已加入 `.gitignore`，不會推上 GitHub
 
 這樣的好處是：
 
@@ -642,7 +683,6 @@ snmpwalk -v2c -c <community> <ER-X_IP> 1.3.6.1.2.1.1.1.0
 確認以下 job 是否為 `UP`：
 
 - `prometheus`
-- `alertmanager`
 - `node-exporter`
 - `cadvisor`
 - `windows-exporter`
@@ -669,17 +709,19 @@ snmpwalk -v2c -c <community> <ER-X_IP> 1.3.6.1.2.1.1.1.0
 - `Docker Compose Overview`
 - `Network Edge & NAS`
 
-### 6.3 Alertmanager
+### 6.3 Grafana Alerting
 
 打開：
 
-- `http://localhost:9093`
+- `http://localhost:3000/alerting/list`
+- `http://localhost:3000/alerting/notifications`
 
 主要檢查：
 
-- 路由是否正常
-- 告警是否有進來
-- 是否需要新增 silence 或分流規則
+- 規則是否為 `Normal` / `Pending` / `Alerting`
+- `telegram-monitoring` contact point 是否存在
+- 某條規則是否有 evaluation error
+- 測試通知是否可送出
 
 ## 8. 每個 Dashboard 的用途與觀察重點
 
@@ -751,13 +793,62 @@ snmpwalk -v2c -c <community> <ER-X_IP> 1.3.6.1.2.1.1.1.0
 - `SynologyDiskHealthProblem`
   - Synology 回報磁碟健康異常
 
-## 10. 日常維運時建議固定觀察的指標
+## 10. 目前生效的告警閥值清單
+
+以下內容對應 [grafana/provisioning/alerting/rules.yml](/home/tuffy/project/monitor/grafana/provisioning/alerting/rules.yml:1)，是目前正式生效的門檻：
+
+- `TargetDown`
+  - 條件：`up < 1`
+  - 持續時間：`2m`
+  - 嚴重度：`critical`
+- `ServiceProbeFailed`
+  - 條件：`probe_success < 1`
+  - 持續時間：`2m`
+  - 嚴重度：`critical`
+- `LinuxCpuHigh`
+  - 條件：Linux CPU 使用率 `> 85%`
+  - 持續時間：`5m`
+  - 嚴重度：`warning`
+- `LinuxMemoryHigh`
+  - 條件：Linux 記憶體使用率 `> 90%`
+  - 持續時間：`5m`
+  - 嚴重度：`warning`
+- `LinuxRootDiskHigh`
+  - 條件：Linux 根目錄使用率 `> 85%`
+  - 持續時間：`10m`
+  - 嚴重度：`warning`
+- `WindowsCpuHigh`
+  - 條件：Windows CPU 使用率 `> 85%`
+  - 持續時間：`5m`
+  - 嚴重度：`warning`
+- `WindowsMemoryHigh`
+  - 條件：Windows 記憶體使用率 `> 90%`
+  - 持續時間：`5m`
+  - 嚴重度：`warning`
+- `WindowsDiskHigh`
+  - 條件：Windows 磁碟使用率 `> 85%`
+  - 持續時間：`10m`
+  - 嚴重度：`warning`
+- `SnmpCpuHigh`
+  - 條件：SNMP 設備 CPU 使用率 `> 85%`
+  - 持續時間：`10m`
+  - 嚴重度：`warning`
+- `SnmpMemoryHigh`
+  - 條件：SNMP 設備記憶體使用率 `> 90%`
+  - 持續時間：`10m`
+  - 嚴重度：`warning`
+- `SynologyDiskHealthProblem`
+  - 條件：`diskHealthStatus != 1`
+  - 持續時間：`10m`
+  - 嚴重度：`critical`
+
+## 11. 日常維運時建議固定觀察的指標
 
 ### 每天看一次
 
 - 所有重要 targets 是否都是 `UP`
 - 是否有服務 probe 失敗
-- Grafana / Prometheus / Alertmanager 本身是否正常
+- Grafana / Prometheus 本身是否正常
 
 ### 每週看一次
 
@@ -773,7 +864,7 @@ snmpwalk -v2c -c <community> <ER-X_IP> 1.3.6.1.2.1.1.1.0
 - 是否要調整 `PROMETHEUS_RETENTION`
 - 是否要新增更多設備或服務 target
 
-## 11. 新增設備或服務的標準流程
+## 12. 新增設備或服務的標準流程
 
 ### 新增 Linux 主機
 
@@ -804,7 +895,7 @@ snmpwalk -v2c -c <community> <ER-X_IP> 1.3.6.1.2.1.1.1.0
 2. TCP 服務加到 `tcp-services.yml`
 3. 到 Grafana 確認 `probe_success`
 
-## 12. 常見排錯方向
+## 13. 常見排錯方向
 
 如果你想看完整的實際查修流程與指令，請直接看：
 
@@ -832,16 +923,16 @@ snmpwalk -v2c -c <community> <ER-X_IP> 1.3.6.1.2.1.1.1.0
 
 先檢查：
 
-- `secrets/alertmanager/telegram_bot_token` 是否為真實 token
-- `secrets/alertmanager/telegram_chat_id` 是否為正確 chat id
+- `secrets/grafana-alerting/telegram_bot_token` 是否為真實 token
+- `secrets/grafana-alerting/telegram_chat_id` 是否為正確 chat id
 - 你是否有先對 bot 私訊 `/start` 或把 bot 加到群組
 - 你是否能用 `sendMessage` API 直接送出測試訊息
-- Alertmanager log 是否有 Telegram API 錯誤
+- Grafana log 是否有 Telegram API 或 alerting provisioning 錯誤
 
-看 Alertmanager log：
+看 Grafana log：
 
 ```bash
-docker compose logs -f alertmanager
+docker compose logs -f grafana
 ```
 
 ### Grafana 有 Dashboard 但沒資料
@@ -860,22 +951,23 @@ docker compose logs -f alertmanager
 - Docker 容器是否真的在同一台主機
 - Compose 容器是否有正確標籤
 
-## 13. 安全與 Git 策略
+## 14. 安全與 Git 策略
 
 - 這個 repo 適合推上 GitHub
 - 真實帳密只放本機 `.env` 與 `snmp/auths.local.yml`
 - 真實設備 IP / 主機名只放本機 `prometheus/file_sd/*.local.yml`
-- Telegram bot token 與 chat id 只放本機 `secrets/alertmanager/`
-- 監控執行資料只放本機 `prometheus/data`、`alertmanager/data`、`grafana/data`、`snmp/generated`
+- Telegram bot token 與 chat id 只放本機 `secrets/grafana-alerting/`
+- Grafana 產生的 Telegram runtime provisioning 只放本機 `grafana/runtime/`
+- 監控執行資料只放本機 `prometheus/data`、`grafana/data`、`grafana/runtime`、`snmp/generated`
 - 需求說明只留在本機
 - 建議 SNMP 使用 v3，不要長期依賴 v2 community
-- 若未來要對外開放 Grafana / Prometheus / Alertmanager，建議加：
+- 若未來要對外開放 Grafana / Prometheus，建議加：
   - 反向代理
   - TLS
   - 基本身分驗證或 SSO
   - IP 限制
 
-## 14. 目前建議的操作順序摘要
+## 15. 目前建議的操作順序摘要
 
 第一次部署時，照這個順序做最穩：
 
@@ -883,9 +975,9 @@ docker compose logs -f alertmanager
 2. 改 `.env`
 3. 改 `snmp/auths.local.yml`
 4. 改 `prometheus/file_sd/*.yml`
-5. 填 `secrets/alertmanager/telegram_*`
+5. 填 `secrets/grafana-alerting/telegram_*`
 6. `make validate`
 7. `make up`
 8. 檢查 Prometheus Targets
-9. 檢查 Grafana Dashboards
+9. 檢查 Grafana Dashboards 與 Alerting 頁面
 10. 測試告警通知是否真的能收到

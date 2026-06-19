@@ -13,6 +13,26 @@
 如果你是第一次部署，先看 [README.md](/home/tuffy/project/monitor/README.md:1)。
 如果你想知道每個設定檔的用途，再搭配 [CONFIG-REFERENCE.md](/home/tuffy/project/monitor/docs/CONFIG-REFERENCE.md:1) 一起看。
 
+目前版本的正式告警流程是 `Grafana Alerting + Telegram`，不是 `Alertmanager`。
+
+## 0. 新舊告警架構快速判斷表
+
+| 你現在看到的東西 | 代表哪一套架構 | 現在是否正式生效 | 你應該改哪裡 |
+| --- | --- | --- | --- |
+| Grafana `Alerting` 頁面裡的規則、Contact point、Notification policy | `Grafana Alerting + Telegram` | 是 | `grafana/provisioning/alerting/rules.yml`、`grafana/provisioning/alerting/templates.yml`、`grafana/templates/contact-points.yml.tpl` |
+| Telegram 是由 Grafana 測試通知送出成功 | `Grafana Alerting + Telegram` | 是 | `secrets/grafana-alerting/*` 與 Grafana provisioning |
+| `prometheus/rules/infrastructure-alerts.yml` | 舊版 `Prometheus rule_files + Alertmanager` | 否 | 通常不用改，除非你要回切舊架構 |
+| `alertmanager/alertmanager.yml` | 舊版 `Prometheus rule_files + Alertmanager` | 否 | 目前可忽略，除非你要重新啟用 Alertmanager |
+| 想改 CPU / RAM / Disk 告警閥值 | `Grafana Alerting + Telegram` | 是 | `grafana/provisioning/alerting/rules.yml` |
+| 想改告警要持續多久才送出 | `Grafana Alerting + Telegram` | 是 | `grafana/provisioning/alerting/rules.yml` 內的 `for:` |
+| 想改 Telegram 訊息格式 | `Grafana Alerting + Telegram` | 是 | `grafana/provisioning/alerting/templates.yml` |
+| 想改 Telegram bot token / chat id | `Grafana Alerting + Telegram` | 是 | `secrets/grafana-alerting/telegram_bot_token`、`secrets/grafana-alerting/telegram_chat_id` |
+
+快速記憶版本：
+
+- 看到 `Grafana Alerting` 頁面與 `grafana/provisioning/alerting/*`，就是現在正式在用的。
+- 看到 `prometheus/rules/*` 跟 `alertmanager/*`，就是舊架構留下來的歷史參考。
+
 ## 1. 查修的大方向
 
 建議每次都照這個順序查：
@@ -45,7 +65,6 @@ docker compose ps
 docker compose logs -f prometheus
 docker compose logs -f grafana
 docker compose logs -f cadvisor
-docker compose logs -f alertmanager
 docker compose logs -f snmp-exporter
 ```
 
@@ -371,14 +390,14 @@ snmpwalk -v2c -c community ROUTER_IP 1.3.6.1.2.1.1.1.0
 ### 先看 bot 是否可用
 
 ```bash
-TOKEN="$(cat secrets/alertmanager/telegram_bot_token)"
+TOKEN="$(cat secrets/grafana-alerting/telegram_bot_token)"
 curl -s "https://api.telegram.org/bot${TOKEN}/getMe" | jq
 ```
 
 ### 再看 chat_id 是否正確
 
 ```bash
-TOKEN="$(cat secrets/alertmanager/telegram_bot_token)"
+TOKEN="$(cat secrets/grafana-alerting/telegram_bot_token)"
 curl -s "https://api.telegram.org/bot${TOKEN}/getUpdates" | jq
 ```
 
@@ -390,8 +409,8 @@ curl -s "https://api.telegram.org/bot${TOKEN}/getUpdates" | jq
 ### 直接測試送訊息
 
 ```bash
-TOKEN="$(cat secrets/alertmanager/telegram_bot_token)"
-CHAT_ID="$(cat secrets/alertmanager/telegram_chat_id)"
+TOKEN="$(cat secrets/grafana-alerting/telegram_bot_token)"
+CHAT_ID="$(cat secrets/grafana-alerting/telegram_chat_id)"
 curl -s "https://api.telegram.org/bot${TOKEN}/sendMessage" \
   --data-urlencode "chat_id=${CHAT_ID}" \
   --data-urlencode "text=Telegram 測試訊息" | jq
@@ -403,11 +422,31 @@ curl -s "https://api.telegram.org/bot${TOKEN}/sendMessage" \
 - chat id 填成 bot id
 - 群組 / 私訊對象不對
 
-### 看 Alertmanager log
+### 看 Grafana Alerting log
 
 ```bash
-docker compose logs -f alertmanager
+docker compose logs -f grafana
 ```
+
+### 用 Grafana 頁面直接測 Telegram
+
+1. 左側進 `Alerting`
+2. 進 `Notification configuration`
+3. 右上角確認選的是 `Grafana`
+4. 在 `Contact points` 找到 `telegram-monitoring`
+5. 點 `View`
+6. 在詳細頁按 `Test` 或 `Send test notification`
+
+如果成功：
+
+- Telegram 會收到一則測試通知
+- Contact point 的狀態不再顯示 `Last delivery attempt failed`
+
+如果失敗：
+
+- 先看 Grafana UI 回傳的錯誤訊息
+- 再看 `docker compose logs -f grafana`
+- 檢查 `secrets/grafana-alerting/` 是否為真實值而不是 `replace-me...`
 
 ## 10. 常用查修指令速查表
 
@@ -423,7 +462,6 @@ docker compose ps
 docker compose logs -f cadvisor
 docker compose logs -f prometheus
 docker compose logs -f grafana
-docker compose logs -f alertmanager
 ```
 
 ### 查 Prometheus target 是否 UP
@@ -481,7 +519,8 @@ docker info --format '{{json .}}' | jq '{Driver, DockerRootDir, CgroupDriver, Cg
 - [prometheus/prometheus.yml](/home/tuffy/project/monitor/prometheus/prometheus.yml:1)
 - [prometheus/file_sd/windows-hosts.yml](/home/tuffy/project/monitor/prometheus/file_sd/windows-hosts.yml:1)
 - [prometheus/file_sd/snmp-devices.yml](/home/tuffy/project/monitor/prometheus/file_sd/snmp-devices.yml:1)
-- [alertmanager/alertmanager.yml](/home/tuffy/project/monitor/alertmanager/alertmanager.yml:1)
+- [grafana/provisioning/alerting/rules.yml](/home/tuffy/project/monitor/grafana/provisioning/alerting/rules.yml:1)
+- [grafana/templates/contact-points.yml.tpl](/home/tuffy/project/monitor/grafana/templates/contact-points.yml.tpl:1)
 - [grafana/provisioning/datasources/datasource.yml](/home/tuffy/project/monitor/grafana/provisioning/datasources/datasource.yml:1)
 - [grafana/provisioning/dashboards/dashboards.yml](/home/tuffy/project/monitor/grafana/provisioning/dashboards/dashboards.yml:1)
 

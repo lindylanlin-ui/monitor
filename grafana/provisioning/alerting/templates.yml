@@ -1,0 +1,54 @@
+apiVersion: 1
+
+templates:
+  - orgId: 1
+    name: telegram-monitoring
+    template: |
+      {{ define "telegram.monitoring.message" -}}
+      {{- if gt (len .Alerts.Firing) 0 -}}
+      Firing
+      {{- else if gt (len .Alerts.Resolved) 0 -}}
+      Resolved
+      {{- else -}}
+      Alert Update
+      {{- end }}
+
+      {{ range .Alerts -}}
+      {{- $summary := index .Annotations "summary" -}}
+      {{- $description := index .Annotations "description" -}}
+      {{- $reason := index .Annotations "grafana_state_reason" -}}
+      {{- $instance := index .Labels "instance" -}}
+      {{- $job := index .Labels "job" -}}
+      {{- $alertname := index .Labels "alertname" -}}
+      {{- $rulename := index .Labels "rulename" -}}
+      {{ if $summary -}}
+      {{ $summary }}
+      {{- else if $instance -}}
+      {{ $instance }}
+      {{- else if $rulename -}}
+      {{ $rulename }}
+      {{- else if $alertname -}}
+      {{ $alertname }}
+      {{- else -}}
+      Monitoring alert
+      {{- end }}
+      {{ if $description -}}
+      {{ $description }}
+      {{- end }}
+      {{ if $instance -}}
+      Instance: {{ $instance }}
+      {{- end }}
+      {{ if $job -}}
+      Job: {{ $job }}
+      {{- end }}
+      {{ if and $alertname (ne $alertname "DatasourceNoData") -}}
+      Alert: {{ $alertname }}
+      {{- end }}
+      {{ if $reason -}}
+      Reason: {{ $reason }}
+      {{- end }}
+      {{ if .GeneratorURL -}}
+      Source: {{ .GeneratorURL }}
+      {{- end }}
+      {{ end -}}
+      {{- end }}

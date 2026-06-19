@@ -1,3 +1,13 @@
+# Prometheus 原生告警規則檔。
+# 注意：這份檔案屬於舊版「Prometheus rule_files + Alertmanager」架構，
+# 目前 repo 內保留作為歷史參考與查表用途，正式流程已不再載入這份檔案。
+# 若未來要重新啟用 Prometheus 原生告警，才需要回頭搭配：
+# 1. prometheus/prometheus.yml 內的 rule_files / alerting 設定
+# 2. alertmanager/alertmanager.yml
+# 3. docker-compose.yml 內的 alertmanager 服務
+#
+# 目前正式生效的告警規則請改：
+# grafana/provisioning/alerting/rules.yml
 groups:
   # 可用性告警：主機或服務完全無法抓取時，優先通知。
   - name: availability

@@ -7,10 +7,10 @@
 # 主要觀察指標：
 # probe_success: 是否能成功連線
 # probe_duration_seconds: 建立連線所花的時間
-- targets: ["alertmanager:9093"]
+- targets: ["grafana:3000"]
   labels:
-    service: alertmanager-tcp
-    role: monitoring-core
+    service: grafana-tcp
+    role: monitoring-ui
 
 # 在下方加入你的 TCP 探測項目，例如 SSH、RDP、SMB、資料庫或自訂應用程式。
 # - targets: ["win10-vm-01.lan:3389"]

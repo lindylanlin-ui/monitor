@@ -6,17 +6,6 @@ global:
   external_labels:
     monitor: docker-compose-monitor
 
-# 告警送往 Alertmanager。
-alerting:
-  alertmanagers:
-    - static_configs:
-        - targets:
-            - alertmanager:9093
-
-# 載入所有 Prometheus 告警規則檔。
-rule_files:
-  - /etc/prometheus/rules/*.yml
-
 scrape_configs:
   # 監控 Prometheus 自己，方便確認資料庫與抓取流程是否正常。
   - job_name: prometheus
@@ -25,18 +14,6 @@ scrape_configs:
           - prometheus:9090
         labels:
           device: prometheus
-          role: monitoring
-    relabel_configs:
-      - source_labels: [device]
-        target_label: instance
-
-  # 監控 Alertmanager 自己，方便觀察告警系統是否活著。
-  - job_name: alertmanager
-    static_configs:
-      - targets:
-          - alertmanager:9093
-        labels:
-          device: alertmanager
           role: monitoring
     relabel_configs:
       - source_labels: [device]

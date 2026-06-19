@@ -9,6 +9,16 @@
 
 如果你是第一次部署，先看 [README.md](/home/tuffy/project/monitor/README.md:1)。
 
+目前版本的正式告警流程是：
+
+- `Prometheus` 只負責抓 metrics
+- `Grafana Alerting` 負責告警規則與 Telegram 通知
+
+下列舊檔仍可能保留在 repo 內作為歷史參考，但目前不屬於正式執行路徑：
+
+- `prometheus/rules/infrastructure-alerts.yml`
+- `alertmanager/alertmanager.yml`
+
 ## 1. 設定檔總覽
 
 ### `docker-compose.yml`
@@ -33,8 +43,8 @@
 本專案目前把主要執行資料直接掛到專案目錄：
 
 - `./prometheus/data:/prometheus`
-- `./alertmanager/data:/alertmanager`
 - `./grafana/data:/var/lib/grafana`
+- `./grafana/runtime:/etc/grafana/provisioning`
 - `./snmp/generated:/etc/snmp_exporter`
 
 意思是：
@@ -71,19 +81,34 @@
 用途：
 
 - 這是 Prometheus 主設定檔
-- 決定 Prometheus 要抓哪些 targets、載入哪些規則、把告警送去哪裡
+- 決定 Prometheus 要抓哪些 targets
 
-這份檔最重要的三個區塊：
+這份檔最重要的區塊：
 
 - `global`
-- `alerting`
 - `scrape_configs`
 
-### `prometheus/rules/infrastructure-alerts.yml`
+### `grafana/provisioning/alerting/rules.yml`
 
 用途：
 
-- 定義何時要觸發告警
+- 定義 Grafana-managed alert rules
+- 決定何時要觸發告警、送到哪個 Grafana contact point
+- 這是目前正式生效的告警規則來源
+
+你應該在這裡修改：
+
+- `params`
+  - 閥值大小，例如 CPU `85`、記憶體 `90`
+- `for`
+  - 條件要持續多久才真正告警，例如 `5m`、`10m`
+- `annotations`
+  - Telegram / Grafana UI 顯示的摘要與說明文字
+
+你不應該再到這裡改正式門檻：
+
+- `prometheus/rules/infrastructure-alerts.yml`
+  - 那是舊版 Prometheus 原生告警規則，現在只保留作歷史參考
 
 組成方式：
 
@@ -91,6 +116,56 @@
   - 把規則分組，方便管理
 - `rules`
   - 每條規則包含名稱、條件、持續時間、標籤、說明
+
+目前主要規則與門檻：
+
+- `TargetDown`
+  - `up < 1`，持續 `2m`
+- `ServiceProbeFailed`
+  - `probe_success < 1`，持續 `2m`
+- `LinuxCpuHigh`
+  - `> 85%`，持續 `5m`
+- `LinuxMemoryHigh`
+  - `> 90%`，持續 `5m`
+- `LinuxRootDiskHigh`
+  - `> 85%`，持續 `10m`
+- `WindowsCpuHigh`
+  - 目前實際為 `> 85%`，持續 `5m`
+- `WindowsMemoryHigh`
+  - `> 90%`，持續 `5m`
+- `WindowsDiskHigh`
+  - `> 85%`，持續 `10m`
+- `SnmpCpuHigh`
+  - `> 85%`，持續 `10m`
+- `SnmpMemoryHigh`
+  - `> 90%`，持續 `10m`
+- `SynologyDiskHealthProblem`
+  - `diskHealthStatus != 1`，持續 `10m`
+
+### `grafana/provisioning/alerting/templates.yml`
+
+用途：
+
+- 保存 Grafana Alerting 的通知模板群組
+- 目前主要用來客製 Telegram 訊息格式
+
+你會在這裡調整：
+
+- firing / resolved 訊息標題
+- 是否顯示 value、reason、instance、job
+- 缺少 label 時的 fallback 文案
+
+### `grafana/templates/contact-points.yml.tpl`
+
+用途：
+
+- 保存 Grafana Telegram contact point 的公開模板
+- 真正敏感的 token / chat id 不會直接寫在這裡
+
+搭配檔案：
+
+- `secrets/grafana-alerting/*`
+- `grafana/runtime/alerting/contact-points.yml`
 
 ### `prometheus/file_sd/*.yml`
 
@@ -103,12 +178,6 @@
 
 - `prometheus.yml` 是監控邏輯
 - `file_sd/*.yml` 是設備名單
-
-### `alertmanager/alertmanager.yml`
-
-用途：
-
-- 控制告警怎麼分流、分組、多久重送、送到哪裡
 
 ### `snmp/auths.local.yml`
 
@@ -156,35 +225,6 @@ global:
 
 - 資料更即時
 - 但主機負擔更重
-
-### `alerting`
-
-例子：
-
-```yaml
-alerting:
-  alertmanagers:
-    - static_configs:
-        - targets:
-            - alertmanager:9093
-```
-
-意思：
-
-- Prometheus 觸發告警後，要把事件送到哪個 Alertmanager
-
-### `rule_files`
-
-例子：
-
-```yaml
-rule_files:
-  - /etc/prometheus/rules/*.yml
-```
-
-意思：
-
-- Prometheus 要載入哪些告警規則檔
 
 ### `scrape_configs`
 
@@ -272,7 +312,8 @@ rule_files:
 
 用途：
 
-- 監控 Alertmanager 自己
+- 這是舊版告警架構留下的歷史 job 說明
+- 目前正式執行路徑已不使用 Alertmanager，因此現在可以忽略
 
 ### `node-exporter`
 
@@ -373,7 +414,7 @@ rule_files:
 用途：
 
 - Grafana 圖表顯示
-- Alertmanager 告警顯示
+- Grafana Alerting 告警顯示
 - 幫你避免只看到 IP
 
 ### `role`
@@ -489,41 +530,48 @@ legacy_v2:
 - `community`
   - 相當於共用密碼
 
-## 7. `alertmanager.yml` 怎麼看
+## 7. Grafana Alerting 設定怎麼看
 
-### `route`
+目前正式會用到的是：
 
-用途：
+- `grafana/provisioning/alerting/rules.yml`
+- `grafana/templates/contact-points.yml.tpl`
+- `secrets/grafana-alerting/*`
+- `grafana/runtime/alerting/contact-points.yml`
 
-- 決定告警送到哪個 receiver
+你可以這樣理解：
 
-常見欄位：
+- `rules.yml`
+  - 告警條件、持續時間、嚴重度、receiver 名稱
+- `contact-points.yml.tpl`
+  - Telegram contact point 模板
+- `secrets/grafana-alerting/*`
+  - 只放真實 bot token / chat id
+- `grafana/runtime/alerting/contact-points.yml`
+  - 啟動時產生的最終檔案，這份才是 Grafana 真正讀取的版本
 
-- `receiver`
-  - 預設送去哪
-- `group_by`
-  - 用哪些欄位來分組
-- `group_wait`
-  - 新告警先等多久再送第一批
-- `group_interval`
-  - 同群新告警多久整理一次再送
-- `repeat_interval`
-  - 同一告警多久重送一次
+其中常見欄位：
 
-### `receivers`
-
-用途：
-
-- 定義實際通知方式
-
-本專案現在是：
-
-- `blackhole`
-  - 吃掉不想通知的告警
-- `default-notify`
-  - 送到 Telegram
+- `title`
+  - 告警名稱
+- `condition`
+  - 告警用哪個 refId 當最終判定
+- `for`
+  - 條件要連續成立多久
+- `notification_settings.receiver`
+  - 要送到哪個 contact point
+- `notification_settings.group_by`
+  - 同類告警怎麼分組
+- `notification_settings.repeat_interval`
+  - 持續告警多久重送一次
 
 ## 8. `infrastructure-alerts.yml` 怎麼看
+
+先講結論：
+
+- 這份是舊版 `Prometheus rule_files + Alertmanager` 架構的告警規則
+- 目前 repo 保留它是為了讓你對照舊邏輯、查 PromQL 寫法、或未來需要回切時參考
+- 它現在不是正式生效路徑，正式門檻請改 `grafana/provisioning/alerting/rules.yml`
 
 每條規則大致長這樣：
 
@@ -630,15 +678,15 @@ legacy_v2:
 
 改：
 
-- `alertmanager/alertmanager.yml`
-- `alertmanager/templates/default.tmpl`
-- `secrets/alertmanager/*`
+- `grafana/provisioning/alerting/rules.yml`
+- `grafana/templates/contact-points.yml.tpl`
+- `secrets/grafana-alerting/*`
 
 ### 想調整告警門檻
 
 改：
 
-- `prometheus/rules/infrastructure-alerts.yml`
+- `grafana/provisioning/alerting/rules.yml`
 
 ## 11. 未來回頭看時建議先讀哪裡
 

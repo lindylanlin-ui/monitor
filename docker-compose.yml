@@ -21,7 +21,6 @@ services:
     ports:
       - "${PROMETHEUS_PORT}:9090"
     depends_on:
-      - alertmanager
       - node-exporter
       - cadvisor
       - blackbox-exporter
@@ -31,32 +30,13 @@ services:
     volumes:
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - ./prometheus/file_sd:/etc/prometheus/file_sd:ro
-      - ./prometheus/rules:/etc/prometheus/rules:ro
       - ./prometheus/data:/prometheus
     networks:
       - monitoring
 
-  # Alertmanager 負責接收 Prometheus 告警事件，再依嚴重度與路由規則轉送通知。
-  alertmanager:
-    image: prom/alertmanager:${ALERTMANAGER_VERSION}
-    container_name: monitoring-alertmanager
-    restart: unless-stopped
-    command:
-      - --config.file=/etc/alertmanager/alertmanager.yml
-      - --storage.path=/alertmanager
-    # 對外開放 Alertmanager UI，方便檢查目前告警、silence 與路由結果。
-    ports:
-      - "${ALERTMANAGER_PORT}:9093"
-    volumes:
-      - ./alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
-      - ./alertmanager/templates:/etc/alertmanager/templates:ro
-      # Telegram bot token 與 chat id 等敏感資訊放在本機 secrets 目錄，不進 Git。
-      - ./secrets/alertmanager:/etc/alertmanager/secrets:ro
-      - ./alertmanager/data:/alertmanager
-    networks:
-      - monitoring
-
-  # Grafana 提供圖表與 dashboard，並用 provisioning 自動匯入資料來源與面板。
+  # Grafana 提供圖表、dashboard 與 Grafana Alerting。
+  # 這裡會透過 provisioning 自動匯入資料來源、面板、Grafana-managed alert rules 與 Telegram contact point。
+  # Telegram contact point 會在啟動時寫入 runtime provisioning，避免把敏感資訊直接存進 Git 版本庫。
   grafana:
     image: grafana/grafana:${GRAFANA_VERSION}
     container_name: monitoring-grafana
@@ -72,10 +52,20 @@ services:
       GF_USERS_ALLOW_SIGN_UP: "false"
       GF_SERVER_ROOT_URL: ${GRAFANA_ROOT_URL}
       GF_DATE_FORMATS_DEFAULT_TIMEZONE: browser
+    entrypoint:
+      - /bin/sh
+      - /usr/local/bin/start-grafana-with-secrets.sh
     volumes:
-      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      # provisioning-src 放 Git 追蹤的靜態模板，真正提供給 Grafana 讀取的是 runtime 目錄。
+      - ./grafana/provisioning:/etc/grafana/provisioning-src:ro
+      - ./grafana/runtime:/etc/grafana/provisioning
+      - ./grafana/templates:/etc/grafana/templates:ro
       - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
       - ./grafana/data:/var/lib/grafana
+      # Grafana Alerting 的 Telegram secrets 建議放在 secrets/grafana-alerting。
+      # 為了相容舊版 Alertmanager 配置，腳本也會接受 secrets/alertmanager。
+      - ./secrets:/etc/grafana/secrets:ro
+      - ./scripts/start-grafana-with-secrets.sh:/usr/local/bin/start-grafana-with-secrets.sh:ro
     networks:
       - monitoring
 
