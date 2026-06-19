@@ -260,7 +260,87 @@
         "defaults": {
           "unit": "none"
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Value"
+            },
+            "properties": [
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "options": {
+                      "1": {
+                        "color": "green",
+                        "index": 0,
+                        "text": "正常"
+                      }
+                    },
+                    "type": "value"
+                  },
+                  {
+                    "options": {
+                      "from": null,
+                      "result": {
+                        "color": "red",
+                        "index": 1,
+                        "text": "異常"
+                      },
+                      "to": 0.999999
+                    },
+                    "type": "range"
+                  },
+                  {
+                    "options": {
+                      "from": 1.000001,
+                      "result": {
+                        "color": "red",
+                        "index": 2,
+                        "text": "異常"
+                      },
+                      "to": null
+                    },
+                    "type": "range"
+                  }
+                ]
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "thresholds"
+                }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "red",
+                      "value": null
+                    },
+                    {
+                      "color": "green",
+                      "value": 1
+                    },
+                    {
+                      "color": "red",
+                      "value": 1.000001
+                    }
+                  ]
+                }
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-text"
+                }
+              }
+            ]
+          }
+        ]
       },
       "gridPos": {
         "h": 8,
@@ -278,6 +358,28 @@
           "format": "table",
           "instant": true,
           "refId": "A"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {},
+            "indexByName": {
+              "Value": 0,
+              "Time": 1,
+              "__name__": 2,
+              "device": 3,
+              "diskID": 4,
+              "instance": 5,
+              "job": 6,
+              "role": 7,
+              "site": 8,
+              "snmp_auth": 9,
+              "snmp_module": 10
+            },
+            "renameByName": {}
+          }
         }
       ],
       "title": "Synology Disk Health",
