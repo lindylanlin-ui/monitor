@@ -17,6 +17,7 @@
 如果你之後回頭看設定時忘記某個欄位是做什麼用，除了本 README，也可以直接查：
 
 - [設定參考手冊](./docs/CONFIG-REFERENCE.md)
+- [查修手冊](./docs/TROUBLESHOOTING.md)
 - [Grafana Dashboard 說明](./grafana/dashboards/README.md)
 
 ## 1. 架構與用途
@@ -474,8 +475,8 @@ curl http://<windows-ip>:9182/metrics
 - CPU 使用率
   - `windows_cpu_time_total`
 - 記憶體使用率
-  - `windows_os_physical_memory_free_bytes`
-  - `windows_cs_physical_memory_bytes`
+  - `windows_memory_physical_free_bytes`
+  - `windows_memory_physical_total_bytes`
 - 磁碟容量
   - `windows_logical_disk_free_bytes`
   - `windows_logical_disk_size_bytes`
@@ -804,6 +805,10 @@ snmpwalk -v2c -c <community> <ER-X_IP> 1.3.6.1.2.1.1.1.0
 3. 到 Grafana 確認 `probe_success`
 
 ## 12. 常見排錯方向
+
+如果你想看完整的實際查修流程與指令，請直接看：
+
+- [查修手冊](./docs/TROUBLESHOOTING.md)
 
 ### Prometheus 抓不到 Windows VM
 

@@ -300,6 +300,11 @@ rule_files:
 - 磁碟
 - Windows 服務狀態
 
+補充：
+
+- 不同版本的 `windows_exporter` 指標名稱可能會有差異
+- 本專案目前以 `windows_memory_physical_free_bytes` 與 `windows_memory_physical_total_bytes` 計算 Windows 記憶體使用率
+
 ### `cadvisor`
 
 用途：

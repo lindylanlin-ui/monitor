@@ -277,7 +277,7 @@
       },
       "targets": [
         {
-          "expr": "100 * (1 - (windows_os_physical_memory_free_bytes{job=\"windows-exporter\", instance=~\"$device\"} / windows_cs_physical_memory_bytes{job=\"windows-exporter\", instance=~\"$device\"}))",
+          "expr": "100 * (1 - (windows_memory_physical_free_bytes{job=\"windows-exporter\", instance=~\"$device\"} / windows_memory_physical_total_bytes{job=\"windows-exporter\", instance=~\"$device\"}))",
           "legendFormat": "{{instance}}",
           "refId": "A"
         }
@@ -434,4 +434,3 @@
   "version": 1,
   "weekStart": ""
 }
-

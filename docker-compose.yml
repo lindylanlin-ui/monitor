@@ -113,6 +113,9 @@ services:
     volumes:
       - /:/rootfs:ro
       - /var/run:/var/run:ro
+      # snap 安裝的 Docker 會把 containerd socket 放在 /run/snap.docker/containerd，
+      # 掛到 /run/containerd 後可讓 cAdvisor 正常註冊 docker factory。
+      - /run/snap.docker/containerd:/run/containerd:ro
       - /sys:/sys:ro
       # Docker 的資料目錄依安裝方式不同而異。
       # 一般 apt 安裝常見為 /var/lib/docker，snap 安裝常見為 /var/snap/docker/common/var-lib-docker。

@@ -63,7 +63,7 @@ groups:
           description: "Windows CPU utilization stayed above 85% for 5 minutes."
 
       - alert: WindowsMemoryHigh
-        expr: 100 * (1 - (windows_os_physical_memory_free_bytes{job="windows-exporter"} / windows_cs_physical_memory_bytes{job="windows-exporter"})) > 90
+        expr: 100 * (1 - (windows_memory_physical_free_bytes{job="windows-exporter"} / windows_memory_physical_total_bytes{job="windows-exporter"})) > 90
         for: 5m
         labels:
           severity: warning
