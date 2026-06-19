@@ -1,0 +1,16 @@
+# Blackbox Exporter 模組設定。
+# http_2xx: 用來檢查 HTTP/HTTPS 是否成功回應。
+# tcp_connect: 只檢查 TCP 三向交握能不能成功建立。
+modules:
+  http_2xx:
+    prober: http
+    timeout: 10s
+    http:
+      preferred_ip_protocol: ip4
+      valid_status_codes: []
+      method: GET
+  tcp_connect:
+    prober: tcp
+    timeout: 5s
+    tcp:
+      preferred_ip_protocol: ip4

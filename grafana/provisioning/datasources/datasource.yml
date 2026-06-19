@@ -1,0 +1,14 @@
+# Grafana 資料來源自動匯入設定。
+# 啟動後會自動建立一個名為 Prometheus 的預設資料來源。
+apiVersion: 1
+
+datasources:
+  - name: Prometheus
+    uid: prometheus
+    type: prometheus
+    access: proxy
+    # Grafana 與 Prometheus 在同一個 compose network 內，
+    # 因此直接用服務名稱 prometheus:9090 存取。
+    url: http://prometheus:9090
+    isDefault: true
+    editable: false

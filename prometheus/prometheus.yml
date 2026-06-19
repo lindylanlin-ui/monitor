@@ -1,0 +1,152 @@
+# 全域抓取與評估頻率。
+# scrape_interval 越短，資料越即時，但主機負載也會較高。
+global:
+  scrape_interval: 30s
+  evaluation_interval: 30s
+  external_labels:
+    monitor: docker-compose-monitor
+
+# 告警送往 Alertmanager。
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+            - alertmanager:9093
+
+# 載入所有 Prometheus 告警規則檔。
+rule_files:
+  - /etc/prometheus/rules/*.yml
+
+scrape_configs:
+  # 監控 Prometheus 自己，方便確認資料庫與抓取流程是否正常。
+  - job_name: prometheus
+    static_configs:
+      - targets:
+          - prometheus:9090
+        labels:
+          device: prometheus
+          role: monitoring
+    relabel_configs:
+      - source_labels: [device]
+        target_label: instance
+
+  # 監控 Alertmanager 自己，方便觀察告警系統是否活著。
+  - job_name: alertmanager
+    static_configs:
+      - targets:
+          - alertmanager:9093
+        labels:
+          device: alertmanager
+          role: monitoring
+    relabel_configs:
+      - source_labels: [device]
+        target_label: instance
+
+  # 監控 Linux 主機。
+  # static_configs 先加入本機 compose 內的 node-exporter。
+  # file_sd_configs 則保留給未來新增的其他 Linux 主機。
+  - job_name: node-exporter
+    static_configs:
+      - targets:
+          - node-exporter:9100
+        labels:
+          device: local-linux-host
+          role: linux-host
+          site: local
+    file_sd_configs:
+      - files:
+          - /etc/prometheus/file_sd/linux-hosts.yml
+    relabel_configs:
+      - source_labels: [device]
+        regex: (.+)
+        target_label: instance
+
+  # 監控 Windows VM。
+  # 這裡完全使用 file_sd，因為每台 Windows VM 通常是外部主機。
+  - job_name: windows-exporter
+    file_sd_configs:
+      - files:
+          - /etc/prometheus/file_sd/windows-hosts.yml
+    relabel_configs:
+      - source_labels: [device]
+        regex: (.+)
+        target_label: instance
+
+  # 監控 Docker 容器。
+  # metric_relabel_configs 只保留常用的 CPU / RAM / 網路 / 開機時間等指標，
+  # 避免 cAdvisor 指標量過大，讓 Prometheus 儲存與查詢壓力失控。
+  - job_name: cadvisor
+    static_configs:
+      - targets:
+          - cadvisor:8080
+        labels:
+          device: local-linux-host
+          role: docker-host
+          site: local
+    file_sd_configs:
+      - files:
+          - /etc/prometheus/file_sd/docker-hosts.yml
+    metric_relabel_configs:
+      - source_labels: [__name__]
+        regex: container_(cpu_usage_seconds_total|last_seen|memory_working_set_bytes|memory_usage_bytes|network_receive_bytes_total|network_transmit_bytes_total|start_time_seconds)
+        action: keep
+    relabel_configs:
+      - source_labels: [device]
+        regex: (.+)
+        target_label: instance
+
+  # 監控 HTTP 服務可用性，例如網站、NAS 管理頁、API。
+  - job_name: blackbox-http
+    metrics_path: /probe
+    params:
+      module:
+        - http_2xx
+    file_sd_configs:
+      - files:
+          - /etc/prometheus/file_sd/http-services.yml
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [service]
+        regex: (.+)
+        target_label: instance
+      - target_label: __address__
+        replacement: blackbox-exporter:9115
+
+  # 監控 TCP 服務可用性，例如 RDP、SSH、資料庫、SMB。
+  - job_name: blackbox-tcp
+    metrics_path: /probe
+    params:
+      module:
+        - tcp_connect
+    file_sd_configs:
+      - files:
+          - /etc/prometheus/file_sd/tcp-services.yml
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [service]
+        regex: (.+)
+        target_label: instance
+      - target_label: __address__
+        replacement: blackbox-exporter:9115
+
+  # 監控透過 SNMP 暴露資訊的設備，例如 Synology 與 ER-X。
+  # snmp_module 與 snmp_auth 會從 file_sd label 帶入。
+  - job_name: snmp
+    metrics_path: /snmp
+    file_sd_configs:
+      - files:
+          - /etc/prometheus/file_sd/snmp-devices.yml
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [snmp_module]
+        target_label: __param_module
+      - source_labels: [snmp_auth]
+        target_label: __param_auth
+      - source_labels: [device]
+        regex: (.+)
+        target_label: instance
+      - target_label: __address__
+        replacement: snmp-exporter:9116

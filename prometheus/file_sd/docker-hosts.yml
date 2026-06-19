@@ -1,0 +1,16 @@
+# 這個檔案給「其他」Docker 主機使用。
+# 如果未來你不只監控本機 Zorin，也想把別台 Docker Host 納進來，
+# 可以在那台主機上跑 cAdvisor，然後把 target 加在這裡。
+#
+# 主要觀察指標：
+# container_cpu_usage_seconds_total: 容器 CPU 用量
+# container_memory_working_set_bytes: 容器常駐記憶體
+# container_network_receive_bytes_total / transmit_bytes_total: 容器網路流量
+#
+# 範例：
+# - targets: ["docker-host-02.lan:8080"]
+#   labels:
+#     device: docker-host-02
+#     role: docker-host
+#     site: branch-office
+[]

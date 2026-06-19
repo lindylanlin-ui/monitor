@@ -1,0 +1,28 @@
+# 這個檔案列出所有透過 SNMP 監控的設備。
+# 每個 target 需要搭配：
+# snmp_auth: 對應 snmp/auths.local.yml 或 auths.example.yml 內的驗證名稱
+# snmp_module: 要抓哪些 MIB 模組，允許多個模組用逗號串接
+#
+# 常見模組用途：
+# if_mib: 網路介面流量、錯誤、速度
+# hrDevice: CPU 與裝置狀態
+# hrStorage: 儲存空間
+# hrSystem: 系統 uptime / process 數量
+# ucd_memory: 記憶體
+# ucd_la_table: load average
+# synology: Synology 專屬磁碟、風扇、溫度、系統狀態
+- targets: ["192.0.2.20"]
+  labels:
+    device: synology-nas
+    role: nas
+    site: home
+    snmp_auth: synology_v3
+    snmp_module: if_mib,hrDevice,hrStorage,hrSystem,ucd_memory,ucd_la_table,synology
+
+- targets: ["192.0.2.30"]
+  labels:
+    device: erx-router
+    role: router
+    site: home
+    snmp_auth: router_v3
+    snmp_module: if_mib,hrDevice,hrStorage,hrSystem,ucd_memory,ucd_la_table

@@ -1,0 +1,9 @@
+.env
+*.local.yml
+snmp/generated/
+grafana/data/
+prometheus/data/
+alertmanager/data/
+secrets/
+需求說明.txt
+

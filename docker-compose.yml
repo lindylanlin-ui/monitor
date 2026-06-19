@@ -1,0 +1,157 @@
+services:
+  # Prometheus 是整個監控平台的核心，負責定期抓取各 exporter 指標、
+  # 套用告警規則，並把時間序列資料保存下來。
+  prometheus:
+    image: prom/prometheus:${PROMETHEUS_VERSION}
+    container_name: monitoring-prometheus
+    restart: unless-stopped
+    # 啟動參數說明：
+    # --config.file: Prometheus 主設定檔。
+    # --storage.tsdb.path: 指標資料保存路徑。
+    # --storage.tsdb.retention.time: 保留多久的歷史資料。
+    # --web.enable-lifecycle: 允許之後用 HTTP 重新載入設定。
+    # --web.external-url: 對外服務網址，供 UI 與反向代理使用。
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=${PROMETHEUS_RETENTION}
+      - --web.enable-lifecycle
+      - --web.external-url=${PROMETHEUS_EXTERNAL_URL}
+    # 對外開放 Prometheus UI / API。
+    ports:
+      - "${PROMETHEUS_PORT}:9090"
+    depends_on:
+      - alertmanager
+      - node-exporter
+      - cadvisor
+      - blackbox-exporter
+      - snmp-exporter
+    # 掛載設定檔與規則檔，資料本體放到 volume 內，避免容器重建後遺失。
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./prometheus/file_sd:/etc/prometheus/file_sd:ro
+      - ./prometheus/rules:/etc/prometheus/rules:ro
+      - prometheus-data:/prometheus
+    networks:
+      - monitoring
+
+  # Alertmanager 負責接收 Prometheus 告警事件，再依嚴重度與路由規則轉送通知。
+  alertmanager:
+    image: prom/alertmanager:${ALERTMANAGER_VERSION}
+    container_name: monitoring-alertmanager
+    restart: unless-stopped
+    command:
+      - --config.file=/etc/alertmanager/alertmanager.yml
+      - --storage.path=/alertmanager
+    # 對外開放 Alertmanager UI，方便檢查目前告警、silence 與路由結果。
+    ports:
+      - "${ALERTMANAGER_PORT}:9093"
+    volumes:
+      - ./alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+      - ./alertmanager/templates:/etc/alertmanager/templates:ro
+      # Telegram bot token 與 chat id 等敏感資訊放在本機 secrets 目錄，不進 Git。
+      - ./secrets/alertmanager:/etc/alertmanager/secrets:ro
+      - alertmanager-data:/alertmanager
+    networks:
+      - monitoring
+
+  # Grafana 提供圖表與 dashboard，並用 provisioning 自動匯入資料來源與面板。
+  grafana:
+    image: grafana/grafana:${GRAFANA_VERSION}
+    container_name: monitoring-grafana
+    restart: unless-stopped
+    depends_on:
+      - prometheus
+    ports:
+      - "${GRAFANA_PORT}:3000"
+    # 這些環境變數會在容器第一次啟動時建立初始設定。
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_SERVER_ROOT_URL: ${GRAFANA_ROOT_URL}
+      GF_DATE_FORMATS_DEFAULT_TIMEZONE: browser
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana-data:/var/lib/grafana
+    networks:
+      - monitoring
+
+  # Node Exporter 用來監控 Linux 主機本身的 CPU、記憶體、磁碟、網路與 systemd 狀態。
+  node-exporter:
+    image: prom/node-exporter:${NODE_EXPORTER_VERSION}
+    container_name: monitoring-node-exporter
+    restart: unless-stopped
+    pid: host
+    # 這些參數讓容器內的 exporter 可以看到宿主機的 /proc、/sys、rootfs。
+    command:
+      - --path.rootfs=/host
+      - --path.procfs=/host/proc
+      - --path.sysfs=/host/sys
+      - --collector.systemd
+      - --collector.filesystem.mount-points-exclude=^/(dev|proc|sys|run/credentials/.+|var/lib/docker/.+)($|/)
+      - --collector.filesystem.fs-types-exclude=^(autofs|binfmt_misc|bpf|cgroup2?|configfs|debugfs|devpts|devtmpfs|fusectl|mqueue|nsfs|overlay|proc|pstore|securityfs|selinuxfs|squashfs|sysfs|tracefs)$
+    volumes:
+      - /:/host:ro,rslave
+    networks:
+      - monitoring
+
+  # cAdvisor 用來抓取 Docker 容器資源使用情況，特別適合觀察多個 docker-compose 專案。
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:${CADVISOR_VERSION}
+    container_name: monitoring-cadvisor
+    restart: unless-stopped
+    privileged: true
+    devices:
+      - /dev/kmsg
+    # cAdvisor 需要讀取 Docker 與 Linux 核心資訊，因此會掛載多個宿主機目錄。
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker:/var/lib/docker:ro
+      - /dev/disk:/dev/disk:ro
+    networks:
+      - monitoring
+
+  # Blackbox Exporter 用來做 HTTP / TCP 可用性探測，適合檢查網站、API、RDP、SSH 等服務。
+  blackbox-exporter:
+    image: prom/blackbox-exporter:${BLACKBOX_EXPORTER_VERSION}
+    container_name: monitoring-blackbox-exporter
+    restart: unless-stopped
+    command:
+      - --config.file=/etc/blackbox_exporter/blackbox.yml
+    volumes:
+      - ./prometheus/blackbox.yml:/etc/blackbox_exporter/blackbox.yml:ro
+    networks:
+      - monitoring
+
+  # SNMP Exporter 用來監控 NAS、Router、交換器等無法安裝 exporter 的設備。
+  snmp-exporter:
+    image: prom/snmp-exporter:${SNMP_EXPORTER_VERSION}
+    container_name: monitoring-snmp-exporter
+    restart: unless-stopped
+    # 先把本機驗證檔與模組檔合併成最終 snmp.yml，再啟動 exporter。
+    entrypoint:
+      - /bin/sh
+      - -ec
+      - render-snmp-config.sh; exec /bin/snmp_exporter --config.file=/etc/snmp_exporter/snmp.yml
+    volumes:
+      - ./snmp:/etc/snmp-config:ro
+      - ./scripts/render-snmp-config.sh:/usr/local/bin/render-snmp-config.sh:ro
+      - snmp-generated:/etc/snmp_exporter
+    networks:
+      - monitoring
+
+networks:
+  # 單獨的 monitoring 網路，讓各服務彼此用服務名稱互通。
+  monitoring:
+    name: monitoring
+
+volumes:
+  # 以下 volumes 用來保存監控資料與執行時產物，避免容器重建就遺失。
+  prometheus-data:
+  alertmanager-data:
+  grafana-data:
+  snmp-generated:

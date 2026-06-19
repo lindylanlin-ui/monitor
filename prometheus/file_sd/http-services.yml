@@ -1,0 +1,25 @@
+# 這個檔案列出要做 HTTP/HTTPS 探測的服務。
+# Blackbox Exporter 會定期發送 HTTP 請求，確認服務是否能正常回應。
+#
+# 適合放在這裡的項目：
+# Grafana、Prometheus、NAS 管理頁、Web 應用程式、內部 API、健康檢查端點。
+#
+# 主要觀察指標：
+# probe_success: 1 代表成功，0 代表失敗
+# probe_http_status_code: HTTP 狀態碼
+# probe_duration_seconds: 探測耗時
+- targets: ["http://grafana:3000/api/health"]
+  labels:
+    service: grafana-http
+    role: monitoring-ui
+
+- targets: ["http://prometheus:9090/-/ready"]
+  labels:
+    service: prometheus-http
+    role: monitoring-core
+
+# 在下方加入你自己的應用程式 URL。
+# - targets: ["http://synology-nas.lan:5000/webman/index.cgi"]
+#   labels:
+#     service: synology-dsm
+#     role: nas-ui

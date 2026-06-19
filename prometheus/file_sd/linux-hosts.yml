@@ -1,0 +1,17 @@
+# 這個檔案專門放「額外」Linux 主機的 node_exporter targets。
+# 本機 Zorin 主機已在 prometheus.yml 的 static_configs 內直接定義，
+# 所以這裡主要留給你未來新增其他 Linux 主機時使用。
+#
+# 欄位說明：
+# targets: exporter 實際位址，通常是 主機名或IP:9100
+# device: Grafana / Alert 標示用的裝置名稱
+# role: 裝置角色，例如 linux-host
+# site: 所在位置，例如 home / office
+#
+# 範例：
+# - targets: ["debian-vm-01.lan:9100"]
+#   labels:
+#     device: debian-vm-01
+#     role: linux-host
+#     site: home
+[]

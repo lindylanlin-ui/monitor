@@ -1,0 +1,28 @@
+# SNMP 驗證範本。
+# 正式部署時請複製成 snmp/auths.local.yml，並填入你的真實帳密。
+# 這個 example 檔可以安全放上 Git；local 檔則應只留在本機。
+auths:
+  synology_v3:
+    # Synology 建議優先使用 SNMPv3。
+    version: 3
+    username: replace-me
+    security_level: authPriv
+    auth_protocol: SHA
+    password: replace-me
+    priv_protocol: AES
+    priv_password: replace-me
+
+  router_v3:
+    # ER-X Router 建議也使用 SNMPv3，避免 community string 明文傳輸。
+    version: 3
+    username: replace-me
+    security_level: authPriv
+    auth_protocol: SHA
+    password: replace-me
+    priv_protocol: AES
+    priv_password: replace-me
+
+  # 若某些舊設備不支援 SNMPv3，才退回使用 SNMPv2。
+  legacy_v2:
+    version: 2
+    community: replace-me

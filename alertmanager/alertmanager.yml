@@ -1,0 +1,44 @@
+# Alertmanager 主要負責：
+# 1. 收到 Prometheus 告警
+# 2. 根據 severity / instance / job 分組
+# 3. 送往 Email、Webhook、Slack、Telegram 等通知渠道
+global:
+  resolve_timeout: 5m
+
+route:
+  # 預設把所有未命中規則的告警丟到 blackhole，避免你還沒配置通知前就亂送。
+  receiver: blackhole
+  group_by: ["alertname", "job", "instance"]
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 4h
+  routes:
+    # 目前示範：只有 critical 告警才送到 default-notify。
+    # 你可以後續再加 warning、site、role 等更細緻的分流規則。
+    - matchers:
+        - severity = "critical"
+      receiver: default-notify
+
+receivers:
+  # blackhole 等於空接收器，用來吃掉你暫時不想通知的告警。
+  - name: blackhole
+
+  # 這個 receiver 會把 critical 告警送到 Telegram。
+  # 敏感資訊不直接寫在此檔案，而是從本機 secrets 檔案讀取：
+  # /etc/alertmanager/secrets/telegram_bot_token
+  # /etc/alertmanager/secrets/telegram_chat_id
+  #
+  # 根據 Prometheus 官方 Alertmanager 設定文件，telegram_config 支援：
+  # bot_token_file、chat_id_file、message_thread_id、parse_mode 等欄位。
+  # 這裡刻意使用純文字 parse_mode，避免 HTML/Markdown 轉義造成訊息送出失敗。
+  - name: default-notify
+    telegram_configs:
+      - bot_token_file: /etc/alertmanager/secrets/telegram_bot_token
+        chat_id_file: /etc/alertmanager/secrets/telegram_chat_id
+        send_resolved: true
+        parse_mode: ""
+        message: '{{ template "telegram.message" . }}'
+
+templates:
+  # 告警訊息模板。
+  - /etc/alertmanager/templates/*.tmpl

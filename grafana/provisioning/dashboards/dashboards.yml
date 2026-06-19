@@ -1,0 +1,14 @@
+# Grafana dashboard 自動匯入設定。
+# 啟動後會把 /var/lib/grafana/dashboards 內的 JSON 檔自動匯入到 Infrastructure 資料夾。
+apiVersion: 1
+
+providers:
+  - name: default
+    orgId: 1
+    folder: Infrastructure
+    type: file
+    disableDeletion: false
+    editable: true
+    updateIntervalSeconds: 30
+    options:
+      path: /var/lib/grafana/dashboards
