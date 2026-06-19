@@ -74,6 +74,8 @@
   - 實際 Grafana dashboard 定義
 - `docs/CONFIG-REFERENCE.md`
   - 設定欄位與維護邏輯查表手冊
+- `prometheus/data`、`alertmanager/data`、`grafana/data`、`snmp/generated`
+  - 實際執行時的資料目錄，保留在專案內但不進 Git
 
 ## 3. 部署前你要準備什麼
 
@@ -127,8 +129,28 @@ make bootstrap
 - `snmp/auths.local.yml`
 - `prometheus/file_sd/windows-hosts.local.yml`
 - `prometheus/file_sd/snmp-devices.local.yml`
+- `prometheus/data`
+- `alertmanager/data`
+- `grafana/data`
+- `snmp/generated`
 - `secrets/alertmanager/telegram_bot_token`
 - `secrets/alertmanager/telegram_chat_id`
+
+### 步驟 1-1：資料目錄現在會放在專案內
+
+本專案目前使用 bind mount，把執行資料直接存到專案目錄：
+
+- `prometheus/data`
+- `alertmanager/data`
+- `grafana/data`
+- `snmp/generated`
+
+這些資料夾會保留容器執行資料，但已加入 `.gitignore`，不會被推上 GitHub。
+
+如果你之前已經用過舊版 named volume，注意：
+
+- 舊資料不會自動搬到這些新資料夾
+- 這次改動後若要延續舊資料，需自行從原本 Docker volume 匯出或複製
 
 ### 步驟 2：設定 Grafana 與 Prometheus 基本參數
 
@@ -831,6 +853,7 @@ docker compose logs -f alertmanager
 - 真實帳密只放本機 `.env` 與 `snmp/auths.local.yml`
 - 真實設備 IP / 主機名只放本機 `prometheus/file_sd/*.local.yml`
 - Telegram bot token 與 chat id 只放本機 `secrets/alertmanager/`
+- 監控執行資料只放本機 `prometheus/data`、`alertmanager/data`、`grafana/data`、`snmp/generated`
 - 需求說明只留在本機
 - 建議 SNMP 使用 v3，不要長期依賴 v2 community
 - 若未來要對外開放 Grafana / Prometheus / Alertmanager，建議加：

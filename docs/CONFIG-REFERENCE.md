@@ -30,6 +30,19 @@
 - 服務之間的 network 名稱
 - exporter 基本 image 名稱
 
+本專案目前把主要執行資料直接掛到專案目錄：
+
+- `./prometheus/data:/prometheus`
+- `./alertmanager/data:/alertmanager`
+- `./grafana/data:/var/lib/grafana`
+- `./snmp/generated:/etc/snmp_exporter`
+
+意思是：
+
+- 資料會直接存在你的專案資料夾內
+- 容器刪掉後資料仍保留
+- 但這些資料夾已被 `.gitignore` 排除，不會推上 GitHub
+
 ### `.env` / `.env.example`
 
 用途：

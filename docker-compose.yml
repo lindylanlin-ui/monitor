@@ -26,12 +26,13 @@ services:
       - cadvisor
       - blackbox-exporter
       - snmp-exporter
-    # 掛載設定檔與規則檔，資料本體放到 volume 內，避免容器重建後遺失。
+    # 掛載設定檔與規則檔，資料本體放到專案內的本機資料夾，
+    # 方便你直接在專案目錄下看到與備份，但這些資料夾不會推上 GitHub。
     volumes:
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - ./prometheus/file_sd:/etc/prometheus/file_sd:ro
       - ./prometheus/rules:/etc/prometheus/rules:ro
-      - prometheus-data:/prometheus
+      - ./prometheus/data:/prometheus
     networks:
       - monitoring
 
@@ -51,7 +52,7 @@ services:
       - ./alertmanager/templates:/etc/alertmanager/templates:ro
       # Telegram bot token 與 chat id 等敏感資訊放在本機 secrets 目錄，不進 Git。
       - ./secrets/alertmanager:/etc/alertmanager/secrets:ro
-      - alertmanager-data:/alertmanager
+      - ./alertmanager/data:/alertmanager
     networks:
       - monitoring
 
@@ -74,7 +75,7 @@ services:
     volumes:
       - ./grafana/provisioning:/etc/grafana/provisioning:ro
       - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
-      - grafana-data:/var/lib/grafana
+      - ./grafana/data:/var/lib/grafana
     networks:
       - monitoring
 
@@ -140,7 +141,7 @@ services:
     volumes:
       - ./snmp:/etc/snmp-config:ro
       - ./scripts/render-snmp-config.sh:/usr/local/bin/render-snmp-config.sh:ro
-      - snmp-generated:/etc/snmp_exporter
+      - ./snmp/generated:/etc/snmp_exporter
     networks:
       - monitoring
 
@@ -148,10 +149,3 @@ networks:
   # 單獨的 monitoring 網路，讓各服務彼此用服務名稱互通。
   monitoring:
     name: monitoring
-
-volumes:
-  # 以下 volumes 用來保存監控資料與執行時產物，避免容器重建就遺失。
-  prometheus-data:
-  alertmanager-data:
-  grafana-data:
-  snmp-generated:
