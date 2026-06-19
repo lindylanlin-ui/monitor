@@ -846,9 +846,3 @@ docker compose logs -f alertmanager
 8. 檢查 Prometheus Targets
 9. 檢查 Grafana Dashboards
 10. 測試告警通知是否真的能收到
-
-## 15. 補充說明
-
-- 設定檔已補上繁體中文註解，方便你之後維護
-- Grafana dashboard 使用 JSON 格式，JSON 本身不支援註解，因此改以文件說明用途與觀察重點
-- 若未來你要再擴充更多 dashboard、告警、SNMP 模組或通知方式，建議先在 `需求說明.txt` 記錄，再回頭實作

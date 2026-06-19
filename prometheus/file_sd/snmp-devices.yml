@@ -16,7 +16,7 @@
 # 該檔案因為符合 *.local.yml 規則，不會被推上 GitHub。
 #
 # 範例：
-# - targets: ["192.168.4.112"]
+# - targets: ["192.168.1.1"]
 #   labels:
 #     device: synology-nas
 #     role: nas
@@ -24,7 +24,7 @@
 #     snmp_auth: synology_v3
 #     snmp_module: if_mib,hrDevice,hrStorage,hrSystem,ucd_memory,ucd_la_table,synology
 #
-# - targets: ["192.168.4.1"]
+# - targets: ["192.168.1.2"]
 #   labels:
 #     device: erx-router
 #     role: router
