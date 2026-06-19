@@ -14,6 +14,11 @@
 - Prometheus 告警規則
 - Alertmanager 告警路由骨架
 
+如果你之後回頭看設定時忘記某個欄位是做什麼用，除了本 README，也可以直接查：
+
+- [設定參考手冊](./docs/CONFIG-REFERENCE.md)
+- [Grafana Dashboard 說明](./grafana/dashboards/README.md)
+
 ## 1. 架構與用途
 
 本專案內每個元件的用途如下：
@@ -67,6 +72,8 @@
   - Grafana 自動匯入資料來源與 dashboard 的設定
 - `grafana/dashboards/*.json`
   - 實際 Grafana dashboard 定義
+- `docs/CONFIG-REFERENCE.md`
+  - 設定欄位與維護邏輯查表手冊
 
 ## 3. 部署前你要準備什麼
 
