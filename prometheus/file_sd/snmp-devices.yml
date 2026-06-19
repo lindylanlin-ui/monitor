@@ -11,18 +11,24 @@
 # ucd_memory: 記憶體
 # ucd_la_table: load average
 # synology: Synology 專屬磁碟、風扇、溫度、系統狀態
-- targets: ["192.0.2.20"]
-  labels:
-    device: synology-nas
-    role: nas
-    site: home
-    snmp_auth: synology_v3
-    snmp_module: if_mib,hrDevice,hrStorage,hrSystem,ucd_memory,ucd_la_table,synology
-
-- targets: ["192.0.2.30"]
-  labels:
-    device: erx-router
-    role: router
-    site: home
-    snmp_auth: router_v3
-    snmp_module: if_mib,hrDevice,hrStorage,hrSystem,ucd_memory,ucd_la_table
+# 這個檔案建議只保留可公開的範例。
+# 你的真實 NAS / Router 位址請放到 snmp-devices.local.yml，
+# 該檔案因為符合 *.local.yml 規則，不會被推上 GitHub。
+#
+# 範例：
+# - targets: ["192.168.4.112"]
+#   labels:
+#     device: synology-nas
+#     role: nas
+#     site: home
+#     snmp_auth: synology_v3
+#     snmp_module: if_mib,hrDevice,hrStorage,hrSystem,ucd_memory,ucd_la_table,synology
+#
+# - targets: ["192.168.4.1"]
+#   labels:
+#     device: erx-router
+#     role: router
+#     site: home
+#     snmp_auth: legacy_v2
+#     snmp_module: if_mib,hrDevice,hrStorage,hrSystem,ucd_memory,ucd_la_table
+[]

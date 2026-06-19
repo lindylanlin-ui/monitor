@@ -7,14 +7,14 @@
 # windows_cs_physical_memory_bytes: 總實體記憶體
 # windows_logical_disk_free_bytes / size_bytes: 磁碟使用率
 # windows_service_state: 服務執行狀態
-- targets: ["win10-vm-01.lan:9182"]
-  labels:
-    device: win10-vm-01
-    role: windows-vm
-    site: home
-
-- targets: ["win10-vm-02.lan:9182"]
-  labels:
-    device: win10-vm-02
-    role: windows-vm
-    site: home
+# 這個檔案建議只保留可公開的範例。
+# 你的真實 Windows VM 位址請放到 windows-hosts.local.yml，
+# 該檔案因為符合 *.local.yml 規則，不會被推上 GitHub。
+#
+# 範例：
+# - targets: ["192.168.4.105:9182"]
+#   labels:
+#     device: win10-vm-01
+#     role: windows-vm
+#     site: home
+[]

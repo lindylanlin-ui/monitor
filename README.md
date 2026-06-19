@@ -118,6 +118,8 @@ make bootstrap
 
 - `.env`
 - `snmp/auths.local.yml`
+- `prometheus/file_sd/windows-hosts.local.yml`
+- `prometheus/file_sd/snmp-devices.local.yml`
 - `secrets/alertmanager/telegram_bot_token`
 - `secrets/alertmanager/telegram_chat_id`
 
@@ -153,7 +155,7 @@ make bootstrap
 
 ### 步驟 4：設定 Windows VM Targets
 
-打開 `prometheus/file_sd/windows-hosts.yml`，把預設範例改成你的實際主機名稱或 IP。
+打開 `prometheus/file_sd/windows-hosts.local.yml`，把你的實際主機名稱或 IP 填進去。
 
 例如：
 
@@ -167,7 +169,7 @@ make bootstrap
 
 ### 步驟 5：設定 NAS 與 Router Targets
 
-打開 `prometheus/file_sd/snmp-devices.yml`，把：
+打開 `prometheus/file_sd/snmp-devices.local.yml`，把：
 
 - `targets`
 - `device`
@@ -408,7 +410,27 @@ msiexec /i windows_exporter-0.31.7-amd64.msi --% ENABLED_COLLECTORS=cpu,cs,logic
 
 - `http://<windows-ip>:9182/metrics` 可從 Prometheus 主機連到
 - Windows 防火牆允許 `9182/tcp`
-- `prometheus/file_sd/windows-hosts.yml` 已填入正確位址
+- `prometheus/file_sd/windows-hosts.local.yml` 已填入正確位址
+
+建議先做兩層測試：
+
+1. 在 Windows VM 本機測試：
+
+```powershell
+curl http://localhost:9182/metrics
+```
+
+2. 在 Zorin 監控主機測試：
+
+```bash
+curl http://<windows-ip>:9182/metrics
+```
+
+如果第二步失敗，通常優先檢查：
+
+- Windows 防火牆是否放行 `9182/tcp`
+- VMware 網路模式是否讓 Zorin 可直連該 VM
+- `windows_exporter` 服務是否真的有啟動
 
 你主要要觀察：
 
@@ -438,7 +460,26 @@ msiexec /i windows_exporter-0.31.7-amd64.msi --% ENABLED_COLLECTORS=cpu,cs,logic
 完成後要更新：
 
 - `snmp/auths.local.yml`
-- `prometheus/file_sd/snmp-devices.yml`
+- `prometheus/file_sd/snmp-devices.local.yml`
+
+`snmp/auths.local.yml` 內的 `synology_v3` 要和 DSM 的 SNMPv3 設定完全一致。
+
+如果密碼剛好以特殊字元開頭，例如 `!`、`#`、`&`，建議在 YAML 內加上雙引號，避免被 YAML 當成特殊語法。
+
+範例：
+
+```yaml
+password: "!examplePassword"
+priv_password: "!examplePassword"
+```
+
+建議用以下方式先驗證 NAS 的 SNMPv3 是否真的可用：
+
+```bash
+snmpwalk -v3 -l authPriv -u <username> -a SHA -A '<auth_password>' -x AES -X '<priv_password>' <NAS_IP> 1.3.6.1.2.1.1.1.0
+```
+
+如果成功，通常會回傳 `sysDescr` 類型的字串。
 
 你主要要觀察：
 
@@ -465,9 +506,43 @@ msiexec /i windows_exporter-0.31.7-amd64.msi --% ENABLED_COLLECTORS=cpu,cs,logic
 
 建議設定：
 
-- 優先使用 SNMPv3
-- 限定來源 IP
+- 使用唯讀模式
+- 限定來源 IP 或來源網段
 - 確認 Prometheus 主機可達 `161/udp`
+
+如果你的 ER-X Web UI 看得到 `SNMP Agent` 頁面，通常可以直接用 GUI 設定：
+
+- `Enable`
+  - 開啟
+- `SNMP community`
+  - 例如 `monitor`
+- `Contact`
+  - 管理者名稱或用途說明
+- `Location`
+  - 例如 `home`
+
+這種 GUI 設法通常對應的是 `SNMPv2c`，因此在本專案中請把它對應到：
+
+```yaml
+auths:
+  legacy_v2:
+    version: 2
+    community: monitor
+```
+
+並在 `prometheus/file_sd/snmp-devices.local.yml` 的 ER-X target 使用：
+
+```yaml
+snmp_auth: legacy_v2
+```
+
+建議用以下方式先驗證 ER-X 是否真的有回應：
+
+```bash
+snmpwalk -v2c -c <community> <ER-X_IP> 1.3.6.1.2.1.1.1.0
+```
+
+如果成功，通常會回傳 `EdgeOS` 的版本字串。
 
 主要要觀察：
 
@@ -674,14 +749,14 @@ msiexec /i windows_exporter-0.31.7-amd64.msi --% ENABLED_COLLECTORS=cpu,cs,logic
 
 1. 安裝 `windows_exporter`
 2. 開放 `9182/tcp`
-3. 把 target 加進 `prometheus/file_sd/windows-hosts.yml`
+3. 把 target 加進 `prometheus/file_sd/windows-hosts.local.yml`
 4. 驗證與觀察 dashboard
 
 ### 新增 NAS / Router / Switch
 
 1. 啟用 SNMP
 2. 在 `snmp/auths.local.yml` 新增驗證名稱
-3. 在 `prometheus/file_sd/snmp-devices.yml` 新增 target
+3. 在 `prometheus/file_sd/snmp-devices.local.yml` 新增 target
 4. 確認模組是否適合
 5. 重新載入或重啟堆疊
 
@@ -707,6 +782,7 @@ msiexec /i windows_exporter-0.31.7-amd64.msi --% ENABLED_COLLECTORS=cpu,cs,logic
 
 - `snmp_auth` 名稱是否對應到 `auths.local.yml`
 - SNMPv3 帳密與協定是否正確
+- SNMPv2c 的 `community` 是否與設備設定一致
 - Prometheus 主機能否打到設備 `161/udp`
 - 裝置是否真的支援你指定的模組
 
@@ -746,6 +822,7 @@ docker compose logs -f alertmanager
 
 - 這個 repo 適合推上 GitHub
 - 真實帳密只放本機 `.env` 與 `snmp/auths.local.yml`
+- 真實設備 IP / 主機名只放本機 `prometheus/file_sd/*.local.yml`
 - Telegram bot token 與 chat id 只放本機 `secrets/alertmanager/`
 - 需求說明只留在本機
 - 建議 SNMP 使用 v3，不要長期依賴 v2 community

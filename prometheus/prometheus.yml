@@ -50,7 +50,7 @@ scrape_configs:
       - targets:
           - node-exporter:9100
         labels:
-          device: local-linux-host
+          device: zorin-linux-host
           role: linux-host
           site: local
     file_sd_configs:
@@ -67,6 +67,7 @@ scrape_configs:
     file_sd_configs:
       - files:
           - /etc/prometheus/file_sd/windows-hosts.yml
+          - /etc/prometheus/file_sd/windows-hosts.local.yml
     relabel_configs:
       - source_labels: [device]
         regex: (.+)
@@ -80,7 +81,7 @@ scrape_configs:
       - targets:
           - cadvisor:8080
         labels:
-          device: local-linux-host
+          device: zorin-linux-host
           role: docker-host
           site: local
     file_sd_configs:
@@ -138,6 +139,7 @@ scrape_configs:
     file_sd_configs:
       - files:
           - /etc/prometheus/file_sd/snmp-devices.yml
+          - /etc/prometheus/file_sd/snmp-devices.local.yml
     relabel_configs:
       - source_labels: [__address__]
         target_label: __param_target
