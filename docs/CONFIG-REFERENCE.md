@@ -63,6 +63,8 @@
   - Grafana 管理帳號
 - `GRAFANA_ADMIN_PASSWORD`
   - Grafana 管理密碼
+- `DOCKER_ROOT_DIR`
+  - 主機上 Docker 真實資料目錄，給 `cAdvisor` 掛載使用
 
 ### `prometheus/prometheus.yml`
 

@@ -94,13 +94,16 @@ services:
       - --collector.filesystem.mount-points-exclude=^/(dev|proc|sys|run/credentials/.+|var/lib/docker/.+)($|/)
       - --collector.filesystem.fs-types-exclude=^(autofs|binfmt_misc|bpf|cgroup2?|configfs|debugfs|devpts|devtmpfs|fusectl|mqueue|nsfs|overlay|proc|pstore|securityfs|selinuxfs|squashfs|sysfs|tracefs)$
     volumes:
-      - /:/host:ro,rslave
+      # 某些 Linux 發行版的根掛載不是 shared/slave，rslave 會導致容器無法啟動。
+      # 這裡改成一般唯讀掛載即可滿足 node-exporter 的主機檔案系統讀取需求。
+      - /:/host:ro
     networks:
       - monitoring
 
   # cAdvisor 用來抓取 Docker 容器資源使用情況，特別適合觀察多個 docker-compose 專案。
   cadvisor:
-    image: gcr.io/cadvisor/cadvisor:${CADVISOR_VERSION}
+    # cAdvisor 官方映像已改用 ghcr.io，且 tag 不帶 v 前綴。
+    image: ghcr.io/google/cadvisor:${CADVISOR_VERSION}
     container_name: monitoring-cadvisor
     restart: unless-stopped
     privileged: true
@@ -111,7 +114,9 @@ services:
       - /:/rootfs:ro
       - /var/run:/var/run:ro
       - /sys:/sys:ro
-      - /var/lib/docker:/var/lib/docker:ro
+      # Docker 的資料目錄依安裝方式不同而異。
+      # 一般 apt 安裝常見為 /var/lib/docker，snap 安裝常見為 /var/snap/docker/common/var-lib-docker。
+      - ${DOCKER_ROOT_DIR}:/var/lib/docker:ro
       - /dev/disk:/dev/disk:ro
     networks:
       - monitoring

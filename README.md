@@ -171,6 +171,14 @@ make bootstrap
 - `ALERTMANAGER_PORT`
 - `GRAFANA_PORT`
 
+注意：
+
+- `CADVISOR_VERSION` 在目前官方映像來源使用 `ghcr.io/google/cadvisor`
+- 該映像 tag 不使用 `v` 前綴，因此應類似 `0.57.0`，不要寫成 `v0.57.0`
+- `DOCKER_ROOT_DIR` 要指向主機上 Docker 的真實資料目錄
+  - 一般 apt 安裝常見：`/var/lib/docker`
+  - `snap` 安裝常見：`/var/snap/docker/common/var-lib-docker`
+
 ### 步驟 3：設定 SNMP 驗證
 
 打開 `snmp/auths.local.yml`，填入真實驗證資料。
