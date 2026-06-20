@@ -139,8 +139,12 @@
   - `> 85%`，持續 `10m`
 - `SnmpMemoryHigh`
   - `> 90%`，持續 `10m`
-- `SynologyDiskHealthProblem`
-  - `diskHealthStatus != 1`，持續 `10m`
+- `NAS 網路流量異常尖峰`
+  - 最近 `5m` 流量 `> 最近 1h 平均的 3 倍`，且 `> 200 Mbps`，持續 `5m`
+- `Router WAN 流量異常尖峰`
+  - 最近 `5m` 流量 `> 最近 1h 平均的 3 倍`，且 `> 200 Mbps`，持續 `5m`
+- `Synology 磁碟健康異常`
+  - `diskHealthStatus != bool 1`，持續 `10m`
 
 ### `grafana/provisioning/alerting/templates.yml`
 
@@ -623,6 +627,31 @@ legacy_v2:
 
 - 多核心 CPU 平均使用率
 
+#### `avg_over_time(...[1h:5m])`
+
+意思：
+
+- 取最近 1 小時、每 5 分鐘一個樣本的平均值，常用來當作流量基線
+
+#### `clamp_min(x, 200000000)`
+
+意思：
+
+- 設定最小下限，避免在平常幾乎沒流量時，因為基線過低而被小波動誤觸發
+- 目前 `200000000` 代表 `200 Mbps`
+
+#### `ifDescr=~"eth[0-9]+"`
+
+意思：
+
+- 只看 NAS 的實體乙太網卡，不把 `lo`、`sit0` 這類非外部流量介面算進去
+
+#### `ifAlias="Internet (PPPoE)"`
+
+意思：
+
+- 只看 ER-X 的 WAN 介面，避免把 LAN / switch / 虛擬介面重複累加
+
 ## 9. Docker 監控相關設定怎麼看
 
 ### 為什麼 Docker 服務通常不用額外設定 exporter
@@ -688,6 +717,43 @@ legacy_v2:
 
 - `grafana/provisioning/alerting/rules.yml`
 
+### 想新增一個 dashboard 面板
+
+改：
+
+- `grafana/dashboards/*.json`
+- `docs/DASHBOARDS.md`
+
+補充：
+
+- 趨勢圖通常用 `timeseries`
+- 即時摘要通常用 `stat`
+- 明細列表通常用 `table`
+
+### 想新增一條告警規則
+
+改：
+
+- `grafana/provisioning/alerting/rules.yml`
+- 必要時一起改 `grafana/provisioning/alerting/templates.yml`
+
+補充：
+
+- 規則本身放在 `rules.yml`
+- 人看的通知文字主要來自 `summary` / `description`
+- Telegram 訊息外框格式來自 `templates.yml`
+- 如果需要完整設計範例，直接看 [EXTENDING.md](./EXTENDING.md)
+
+### 想新增一個 Prometheus 指標來源
+
+先看來源類型，再改對位置：
+
+- Linux：`prometheus/file_sd/linux-hosts.yml`
+- Windows：`prometheus/file_sd/windows-hosts.local.yml`
+- SNMP：`prometheus/file_sd/snmp-devices.local.yml`
+- HTTP / TCP probe：`prometheus/file_sd/http-services.yml`、`prometheus/file_sd/tcp-services.yml`
+- SNMP 模組本身：`snmp/modules.yml`
+
 ## 11. 未來回頭看時建議先讀哪裡
 
 如果你看到某個問題，不知道要去哪裡改，建議順序：
@@ -703,4 +769,4 @@ legacy_v2:
 - 看不懂某個欄位
   - 看這份 `CONFIG-REFERENCE`
 - 看不懂圖表用途
-  - 看 `grafana/dashboards/README.md`
+  - 看 `docs/DASHBOARDS.md`

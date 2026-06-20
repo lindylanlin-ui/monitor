@@ -71,8 +71,8 @@ groups:
         executionErrorState: Error
         for: 2m
         annotations:
-          summary: "{{ range $k, $v := $values }}{{ if (match \"B[0-9]+\" $k) }}{{ if index $v.Labels \"instance\" }}{{ index $v.Labels \"instance\" }} is unreachable{{ else if index $v.Labels \"job\" }}{{ index $v.Labels \"job\" }} target is unreachable{{ else }}Prometheus target is unreachable{{ end }}{{ end }}{{ end }}"
-          description: "{{ range $k, $v := $values }}{{ if (match \"B[0-9]+\" $k) }}{{ if index $v.Labels \"instance\" }}Prometheus target {{ index $v.Labels \"instance\" }}{{ else }}A Prometheus target{{ end }}{{ if index $v.Labels \"job\" }} (job={{ index $v.Labels \"job\" }}){{ end }} has been down for more than 2 minutes.{{ end }}{{ end }}"
+          summary: "{{ range $k, $v := $values }}{{ if (match \"B[0-9]+\" $k) }}{{ if index $v.Labels \"instance\" }}{{ index $v.Labels \"instance\" }} 無法連線{{ else if index $v.Labels \"job\" }}{{ index $v.Labels \"job\" }} target 無法連線{{ else }}Prometheus target 無法連線{{ end }}{{ end }}{{ end }}"
+          description: "{{ range $k, $v := $values }}{{ if (match \"B[0-9]+\" $k) }}{{ if index $v.Labels \"instance\" }}Prometheus target {{ index $v.Labels \"instance\" }}{{ else }}Prometheus target{{ end }}{{ if index $v.Labels \"job\" }} (job={{ index $v.Labels \"job\" }}){{ end }} 已連續超過 2 分鐘處於 down 狀態。{{ end }}{{ end }}"
         labels:
           severity: critical
         isPaused: false
@@ -140,8 +140,8 @@ groups:
         executionErrorState: Error
         for: 2m
         annotations:
-          summary: "{{ range $k, $v := $values }}{{ if (match \"B[0-9]+\" $k) }}{{ if index $v.Labels \"instance\" }}{{ index $v.Labels \"instance\" }} probe failed{{ else }}Service probe failed{{ end }}{{ end }}{{ end }}"
-          description: "{{ range $k, $v := $values }}{{ if (match \"B[0-9]+\" $k) }}{{ if index $v.Labels \"instance\" }}Blackbox probe for {{ index $v.Labels \"instance\" }}{{ else }}A blackbox probe{{ end }} has failed for more than 2 minutes.{{ end }}{{ end }}"
+          summary: "{{ range $k, $v := $values }}{{ if (match \"B[0-9]+\" $k) }}{{ if index $v.Labels \"instance\" }}{{ index $v.Labels \"instance\" }} probe 失敗{{ else }}Service probe 失敗{{ end }}{{ end }}{{ end }}"
+          description: "{{ range $k, $v := $values }}{{ if (match \"B[0-9]+\" $k) }}{{ if index $v.Labels \"instance\" }}{{ index $v.Labels \"instance\" }} 的 Blackbox probe{{ else }}Blackbox probe{{ end }} 已連續失敗超過 2 分鐘。{{ end }}{{ end }}"
         labels:
           severity: critical
         isPaused: false
@@ -214,8 +214,8 @@ groups:
         executionErrorState: Error
         for: 5m
         annotations:
-          summary: "{{ range $k, $v := $values }}{{ if (match \"B[0-9]+\" $k) }}{{ if index $v.Labels \"instance\" }}{{ index $v.Labels \"instance\" }} CPU usage is high{{ else }}Linux CPU usage is high{{ end }}{{ end }}{{ end }}"
-          description: "Linux CPU utilization stayed above 85% for 5 minutes."
+          summary: "{{ range $k, $v := $values }}{{ if (match \"B[0-9]+\" $k) }}{{ if index $v.Labels \"instance\" }}{{ index $v.Labels \"instance\" }} CPU 使用率過高{{ else }}Linux CPU 使用率過高{{ end }}{{ end }}{{ end }}"
+          description: "Linux CPU 使用率連續 5 分鐘高於 85%。"
         labels:
           severity: warning
         isPaused: false
@@ -278,8 +278,8 @@ groups:
         executionErrorState: Error
         for: 5m
         annotations:
-          summary: "{{ range $k, $v := $values }}{{ if (match \"B[0-9]+\" $k) }}{{ if index $v.Labels \"instance\" }}{{ index $v.Labels \"instance\" }} memory usage is high{{ else }}Linux memory usage is high{{ end }}{{ end }}{{ end }}"
-          description: "Linux memory utilization stayed above 90% for 5 minutes."
+          summary: "{{ range $k, $v := $values }}{{ if (match \"B[0-9]+\" $k) }}{{ if index $v.Labels \"instance\" }}{{ index $v.Labels \"instance\" }} 記憶體使用率過高{{ else }}Linux 記憶體使用率過高{{ end }}{{ end }}{{ end }}"
+          description: "Linux 記憶體使用率連續 5 分鐘高於 90%。"
         labels:
           severity: warning
         isPaused: false
@@ -340,8 +340,8 @@ groups:
         executionErrorState: Error
         for: 10m
         annotations:
-          summary: "{{ range $k, $v := $values }}{{ if (match \"B[0-9]+\" $k) }}{{ if index $v.Labels \"instance\" }}{{ index $v.Labels \"instance\" }} root disk usage is high{{ else }}Linux root disk usage is high{{ end }}{{ end }}{{ end }}"
-          description: "Root filesystem utilization stayed above 85% for 10 minutes."
+          summary: "{{ range $k, $v := $values }}{{ if (match \"B[0-9]+\" $k) }}{{ if index $v.Labels \"instance\" }}{{ index $v.Labels \"instance\" }} 根目錄磁碟使用率過高{{ else }}Linux 根目錄磁碟使用率過高{{ end }}{{ end }}{{ end }}"
+          description: "Linux 根檔案系統使用率連續 10 分鐘高於 85%。"
         labels:
           severity: warning
         isPaused: false
@@ -404,8 +404,8 @@ groups:
         executionErrorState: Error
         for: 5m
         annotations:
-          summary: "{{ range $k, $v := $values }}{{ if (match \"B[0-9]+\" $k) }}{{ if index $v.Labels \"instance\" }}{{ index $v.Labels \"instance\" }} CPU usage is high{{ else }}Windows CPU usage is high{{ end }}{{ end }}{{ end }}"
-          description: "Windows CPU utilization stayed above 85% for 5 minutes."
+          summary: "{{ range $k, $v := $values }}{{ if (match \"B[0-9]+\" $k) }}{{ if index $v.Labels \"instance\" }}{{ index $v.Labels \"instance\" }} CPU 使用率過高{{ else }}Windows CPU 使用率過高{{ end }}{{ end }}{{ end }}"
+          description: "Windows CPU 使用率連續 5 分鐘高於 85%。"
         labels:
           severity: warning
         isPaused: false
@@ -468,8 +468,8 @@ groups:
         executionErrorState: Error
         for: 5m
         annotations:
-          summary: "{{ range $k, $v := $values }}{{ if (match \"B[0-9]+\" $k) }}{{ if index $v.Labels \"instance\" }}{{ index $v.Labels \"instance\" }} memory usage is high{{ else }}Windows memory usage is high{{ end }}{{ end }}{{ end }}"
-          description: "Windows memory utilization stayed above 90% for 5 minutes."
+          summary: "{{ range $k, $v := $values }}{{ if (match \"B[0-9]+\" $k) }}{{ if index $v.Labels \"instance\" }}{{ index $v.Labels \"instance\" }} 記憶體使用率過高{{ else }}Windows 記憶體使用率過高{{ end }}{{ end }}{{ end }}"
+          description: "Windows 記憶體使用率連續 5 分鐘高於 90%。"
         labels:
           severity: warning
         isPaused: false
@@ -530,8 +530,8 @@ groups:
         executionErrorState: Error
         for: 10m
         annotations:
-          summary: "{{ range $k, $v := $values }}{{ if (match \"B[0-9]+\" $k) }}{{ if index $v.Labels \"instance\" }}{{ index $v.Labels \"instance\" }} disk usage is high{{ else }}Windows disk usage is high{{ end }}{{ end }}{{ end }}"
-          description: "{{ range $k, $v := $values }}{{ if (match \"B[0-9]+\" $k) }}Windows disk {{ if index $v.Labels \"volume\" }}{{ index $v.Labels \"volume\" }}{{ else }}volume{{ end }} stayed above 85% utilization for 10 minutes.{{ end }}{{ end }}"
+          summary: "{{ range $k, $v := $values }}{{ if (match \"B[0-9]+\" $k) }}{{ if index $v.Labels \"instance\" }}{{ index $v.Labels \"instance\" }} 磁碟使用率過高{{ else }}Windows 磁碟使用率過高{{ end }}{{ end }}{{ end }}"
+          description: "{{ range $k, $v := $values }}{{ if (match \"B[0-9]+\" $k) }}Windows 磁碟 {{ if index $v.Labels \"volume\" }}{{ index $v.Labels \"volume\" }}{{ else }}volume{{ end }} 使用率連續 10 分鐘高於 85%。{{ end }}{{ end }}"
         labels:
           severity: warning
         isPaused: false
@@ -599,8 +599,8 @@ groups:
         executionErrorState: Error
         for: 10m
         annotations:
-          summary: "{{ range $k, $v := $values }}{{ if (match \"B[0-9]+\" $k) }}{{ if index $v.Labels \"instance\" }}{{ index $v.Labels \"instance\" }} CPU usage is high{{ else }}SNMP CPU usage is high{{ end }}{{ end }}{{ end }}"
-          description: "SNMP CPU utilization stayed above 85% for 10 minutes."
+          summary: "{{ range $k, $v := $values }}{{ if (match \"B[0-9]+\" $k) }}{{ if index $v.Labels \"instance\" }}{{ index $v.Labels \"instance\" }} CPU 使用率過高{{ else }}SNMP CPU 使用率過高{{ end }}{{ end }}{{ end }}"
+          description: "SNMP 裝置 CPU 使用率連續 10 分鐘高於 85%。"
         labels:
           severity: warning
         isPaused: false
@@ -663,8 +663,136 @@ groups:
         executionErrorState: Error
         for: 10m
         annotations:
-          summary: "{{ range $k, $v := $values }}{{ if (match \"B[0-9]+\" $k) }}{{ if index $v.Labels \"instance\" }}{{ index $v.Labels \"instance\" }} memory usage is high{{ else }}SNMP memory usage is high{{ end }}{{ end }}{{ end }}"
-          description: "SNMP effective memory utilization excluding cache and buffers stayed above 90% for 10 minutes."
+          summary: "{{ range $k, $v := $values }}{{ if (match \"B[0-9]+\" $k) }}{{ if index $v.Labels \"instance\" }}{{ index $v.Labels \"instance\" }} 記憶體使用率過高{{ else }}SNMP 記憶體使用率過高{{ end }}{{ end }}{{ end }}"
+          description: "SNMP 裝置有效記憶體使用率（已排除 cache / buffers）連續 10 分鐘高於 90%。"
+        labels:
+          severity: warning
+        isPaused: false
+        notification_settings:
+          receiver: telegram-monitoring
+          group_by: [alertname, grafana_folder, instance]
+          group_wait: 30s
+          group_interval: 5m
+          repeat_interval: 4h
+
+      - uid: nas_traffic_spike
+        title: NAS 網路流量異常尖峰
+        condition: B
+        data:
+          - refId: A
+            datasourceUid: prometheus
+            relativeTimeRange:
+              from: 7200
+              to: 0
+            model:
+              datasource:
+                type: prometheus
+                uid: prometheus
+              editorMode: code
+              expr: ((sum by (instance) (rate(ifHCInOctets{job="snmp", instance="synology-nas", ifDescr=~"eth[0-9]+"}[5m]) * 8) > clamp_min(avg_over_time((sum by (instance) (rate(ifHCInOctets{job="snmp", instance="synology-nas", ifDescr=~"eth[0-9]+"}[5m]) * 8))[1h:5m]) * 3, 200000000)) or (sum by (instance) (rate(ifHCOutOctets{job="snmp", instance="synology-nas", ifDescr=~"eth[0-9]+"}[5m]) * 8) > clamp_min(avg_over_time((sum by (instance) (rate(ifHCOutOctets{job="snmp", instance="synology-nas", ifDescr=~"eth[0-9]+"}[5m]) * 8))[1h:5m]) * 3, 200000000)))
+              instant: true
+              intervalMs: 1000
+              maxDataPoints: 43200
+              range: false
+              refId: A
+          - refId: B
+            datasourceUid: __expr__
+            relativeTimeRange:
+              from: 0
+              to: 0
+            model:
+              conditions:
+                - evaluator:
+                    params: [0]
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params: [A]
+                  reducer:
+                    params: []
+                    type: last
+                  type: query
+              datasource:
+                type: __expr__
+                uid: __expr__
+              expression: A
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: B
+              type: classic_conditions
+        dashboardUid: network-edge-and-nas
+        panelId: 3
+        noDataState: OK
+        executionErrorState: Error
+        for: 5m
+        annotations:
+          summary: "{{ range $k, $v := $values }}{{ if (match \"B[0-9]+\" $k) }}{{ if index $v.Labels \"instance\" }}{{ index $v.Labels \"instance\" }} 網路流量出現異常尖峰{{ else }}NAS 網路流量出現異常尖峰{{ end }}{{ end }}{{ end }}"
+          description: "NAS 實體網卡流量在過去 5 分鐘高於最近 1 小時平均的 3 倍，且超過 200 Mbps。"
+        labels:
+          severity: warning
+        isPaused: false
+        notification_settings:
+          receiver: telegram-monitoring
+          group_by: [alertname, grafana_folder, instance]
+          group_wait: 30s
+          group_interval: 5m
+          repeat_interval: 4h
+
+      - uid: router_wan_traffic_spike
+        title: Router WAN 流量異常尖峰
+        condition: B
+        data:
+          - refId: A
+            datasourceUid: prometheus
+            relativeTimeRange:
+              from: 7200
+              to: 0
+            model:
+              datasource:
+                type: prometheus
+                uid: prometheus
+              editorMode: code
+              expr: ((sum by (instance) (rate(ifHCInOctets{job="snmp", instance="erx-router", ifAlias="Internet (PPPoE)"}[5m]) * 8) > clamp_min(avg_over_time((sum by (instance) (rate(ifHCInOctets{job="snmp", instance="erx-router", ifAlias="Internet (PPPoE)"}[5m]) * 8))[1h:5m]) * 3, 200000000)) or (sum by (instance) (rate(ifHCOutOctets{job="snmp", instance="erx-router", ifAlias="Internet (PPPoE)"}[5m]) * 8) > clamp_min(avg_over_time((sum by (instance) (rate(ifHCOutOctets{job="snmp", instance="erx-router", ifAlias="Internet (PPPoE)"}[5m]) * 8))[1h:5m]) * 3, 200000000)))
+              instant: true
+              intervalMs: 1000
+              maxDataPoints: 43200
+              range: false
+              refId: A
+          - refId: B
+            datasourceUid: __expr__
+            relativeTimeRange:
+              from: 0
+              to: 0
+            model:
+              conditions:
+                - evaluator:
+                    params: [0]
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params: [A]
+                  reducer:
+                    params: []
+                    type: last
+                  type: query
+              datasource:
+                type: __expr__
+                uid: __expr__
+              expression: A
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: B
+              type: classic_conditions
+        dashboardUid: network-edge-and-nas
+        panelId: 3
+        noDataState: OK
+        executionErrorState: Error
+        for: 5m
+        annotations:
+          summary: "{{ range $k, $v := $values }}{{ if (match \"B[0-9]+\" $k) }}{{ if index $v.Labels \"instance\" }}{{ index $v.Labels \"instance\" }} WAN 流量出現異常尖峰{{ else }}Router WAN 流量出現異常尖峰{{ end }}{{ end }}{{ end }}"
+          description: "Router WAN 流量在過去 5 分鐘高於最近 1 小時平均的 3 倍，且超過 200 Mbps。"
         labels:
           severity: warning
         isPaused: false
@@ -676,7 +804,7 @@ groups:
           repeat_interval: 4h
 
       - uid: synology_disk_health_problem
-        title: SynologyDiskHealthProblem
+        title: Synology 磁碟健康異常
         condition: B
         data:
           - refId: A
@@ -689,7 +817,7 @@ groups:
                 type: prometheus
                 uid: prometheus
               editorMode: code
-              expr: diskHealthStatus{job="snmp"} != 1
+              expr: diskHealthStatus{job="snmp"} != bool 1
               instant: true
               intervalMs: 1000
               maxDataPoints: 43200
@@ -727,8 +855,8 @@ groups:
         executionErrorState: Error
         for: 10m
         annotations:
-          summary: "{{ range $k, $v := $values }}{{ if (match \"B[0-9]+\" $k) }}{{ if index $v.Labels \"instance\" }}{{ index $v.Labels \"instance\" }}{{ else }}Synology{{ end }} disk {{ if index $v.Labels \"diskID\" }}{{ index $v.Labels \"diskID\" }}{{ else }}unknown{{ end }} health warning{{ end }}{{ end }}"
-          description: "{{ range $k, $v := $values }}{{ if (match \"B[0-9]+\" $k) }}Synology reported a non-healthy disk state for disk {{ if index $v.Labels \"diskID\" }}{{ index $v.Labels \"diskID\" }}{{ else }}unknown{{ end }}.{{ end }}{{ end }}"
+          summary: "{{ range $k, $v := $values }}{{ if (match \"B[0-9]+\" $k) }}{{ if index $v.Labels \"instance\" }}{{ index $v.Labels \"instance\" }}{{ else }}Synology{{ end }} 的磁碟 {{ if index $v.Labels \"diskID\" }}{{ index $v.Labels \"diskID\" }}{{ else }}unknown{{ end }} 健康狀態異常{{ end }}{{ end }}"
+          description: "{{ range $k, $v := $values }}{{ if (match \"B[0-9]+\" $k) }}Synology 回報磁碟 {{ if index $v.Labels \"diskID\" }}{{ index $v.Labels \"diskID\" }}{{ else }}unknown{{ end }} 狀態不是 healthy，請檢查 DSM 的磁碟健康資訊。{{ end }}{{ end }}"
         labels:
           severity: critical
         isPaused: false

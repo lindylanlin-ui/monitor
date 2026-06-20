@@ -167,7 +167,7 @@ Grafana dashboard JSON 在：
 
 如果你想知道面板用途，可看：
 
-- [grafana/dashboards/README.md](/home/tuffy/project/monitor/grafana/dashboards/README.md:1)
+- [docs/DASHBOARDS.md](/home/tuffy/project/monitor/docs/DASHBOARDS.md:1)
 
 ## 6. 本次案例：`Docker 總覽` 全部 `No data` 要怎麼查
 

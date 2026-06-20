@@ -6,11 +6,11 @@ templates:
     template: |
       {{ define "telegram.monitoring.message" -}}
       {{- if gt (len .Alerts.Firing) 0 -}}
-      Firing
+      告警中
       {{- else if gt (len .Alerts.Resolved) 0 -}}
-      Resolved
+      已恢復
       {{- else -}}
-      Alert Update
+      告警更新
       {{- end }}
 
       {{ range .Alerts -}}
@@ -30,13 +30,13 @@ templates:
       {{- else if $alertname -}}
       {{ $alertname }}
       {{- else -}}
-      Monitoring alert
+      監控告警
       {{- end }}
       {{ if $description -}}
       {{ $description }}
       {{- end }}
       {{ if $instance -}}
-      Instance: {{ $instance }}
+      實例: {{ $instance }}
       {{- end }}
       {{ if $job -}}
       Job: {{ $job }}
@@ -45,10 +45,10 @@ templates:
       Alert: {{ $alertname }}
       {{- end }}
       {{ if $reason -}}
-      Reason: {{ $reason }}
+      原因: {{ $reason }}
       {{- end }}
       {{ if .GeneratorURL -}}
-      Source: {{ .GeneratorURL }}
+      來源: {{ .GeneratorURL }}
       {{- end }}
       {{ end -}}
       {{- end }}
