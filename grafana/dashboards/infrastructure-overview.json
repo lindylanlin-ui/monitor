@@ -363,6 +363,48 @@
       ],
       "title": "HTTP / TCP 探測成功率",
       "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 22
+      },
+      "id": 9,
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "single"
+        }
+      },
+      "targets": [
+        {
+          "expr": "100 * (1 - (node_filesystem_avail_bytes{job=\"node-exporter\", mountpoint=\"/\", fstype!~\"tmpfs|overlay|squashfs\", instance=~\"$device\"} / node_filesystem_size_bytes{job=\"node-exporter\", mountpoint=\"/\", fstype!~\"tmpfs|overlay|squashfs\", instance=~\"$device\"}))",
+          "legendFormat": "Linux {{instance}} /",
+          "refId": "A"
+        },
+        {
+          "expr": "100 * (1 - (windows_logical_disk_free_bytes{job=\"windows-exporter\", volume!~\"HarddiskVolume.*|_Total\", instance=~\"$device\"} / windows_logical_disk_size_bytes{job=\"windows-exporter\", volume!~\"HarddiskVolume.*|_Total\", instance=~\"$device\"}))",
+          "legendFormat": "Windows {{instance}} {{volume}}",
+          "refId": "B"
+        }
+      ],
+      "title": "硬碟使用率",
+      "type": "timeseries"
     }
   ],
   "refresh": "30s",

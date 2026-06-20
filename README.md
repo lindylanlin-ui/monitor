@@ -741,6 +741,7 @@ snmpwalk -v2c -c <community> <ER-X_IP> 1.3.6.1.2.1.1.1.0
 - 有多少 HTTP / TCP 服務目前探測成功
 - Linux CPU / RAM 是否持續偏高
 - Windows CPU / RAM 是否持續偏高
+- Linux / Windows 硬碟使用率是否接近上限
 - Linux 網路流量是否異常突然升高
 - 某些服務 probe 是否間歇性失敗
 
