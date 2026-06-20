@@ -62,8 +62,7 @@ services:
       - ./grafana/templates:/etc/grafana/templates:ro
       - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
       - ./grafana/data:/var/lib/grafana
-      # Grafana Alerting 的 Telegram secrets 建議放在 secrets/grafana-alerting。
-      # 為了相容舊版 Alertmanager 配置，腳本也會接受 secrets/alertmanager。
+      # Grafana Alerting 的 Telegram secrets 放在 secrets/grafana-alerting。
       - ./secrets:/etc/grafana/secrets:ro
       - ./scripts/start-grafana-with-secrets.sh:/usr/local/bin/start-grafana-with-secrets.sh:ro
     networks:

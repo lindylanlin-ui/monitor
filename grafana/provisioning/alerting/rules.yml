@@ -2,7 +2,7 @@
 # 這份檔案是目前正式生效的告警規則來源。
 # 目前架構為「Prometheus 抓 metrics + Grafana Alerting 判斷與通知」，
 # 因此 CPU / 記憶體 / 磁碟 / target down / probe failed 等門檻，
-# 都應該在這份檔案修改，而不是去改 prometheus/rules/infrastructure-alerts.yml。
+# 都應該在這份檔案修改。
 #
 # 重點提醒：
 # 1. `for:` 代表條件要持續多久才真正觸發告警

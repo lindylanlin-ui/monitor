@@ -7,17 +7,12 @@
 - 什麼情況應該改哪個檔案
 - 告警規則與監控邏輯怎麼看
 
-如果你是第一次部署，先看 [README.md](/home/tuffy/project/monitor/README.md:1)。
+如果你是第一次部署，先看 [README.md](../README.md)。
 
 目前版本的正式告警流程是：
 
 - `Prometheus` 只負責抓 metrics
 - `Grafana Alerting` 負責告警規則與 Telegram 通知
-
-下列舊檔仍可能保留在 repo 內作為歷史參考，但目前不屬於正式執行路徑：
-
-- `prometheus/rules/infrastructure-alerts.yml`
-- `alertmanager/alertmanager.yml`
 
 ## 1. 設定檔總覽
 
@@ -104,11 +99,6 @@
   - 條件要持續多久才真正告警，例如 `5m`、`10m`
 - `annotations`
   - Telegram / Grafana UI 顯示的摘要與說明文字
-
-你不應該再到這裡改正式門檻：
-
-- `prometheus/rules/infrastructure-alerts.yml`
-  - 那是舊版 Prometheus 原生告警規則，現在只保留作歷史參考
 
 組成方式：
 
@@ -311,13 +301,6 @@ global:
 
 - `up`
 - Prometheus 自身狀態
-
-### `alertmanager`
-
-用途：
-
-- 這是舊版告警架構留下的歷史 job 說明
-- 目前正式執行路徑已不使用 Alertmanager，因此現在可以忽略
 
 ### `node-exporter`
 
@@ -569,22 +552,19 @@ legacy_v2:
 - `notification_settings.repeat_interval`
   - 持續告警多久重送一次
 
-## 8. `infrastructure-alerts.yml` 怎麼看
+## 8. 告警條件怎麼看
 
 先講結論：
 
-- 這份是舊版 `Prometheus rule_files + Alertmanager` 架構的告警規則
-- 目前 repo 保留它是為了讓你對照舊邏輯、查 PromQL 寫法、或未來需要回切時參考
-- 它現在不是正式生效路徑，正式門檻請改 `grafana/provisioning/alerting/rules.yml`
+- 正式生效的告警規則在 `grafana/provisioning/alerting/rules.yml`
+- 你主要需要看的是查詢條件、閥值、`for` 時間與 annotations 文字
 
 每條規則大致長這樣：
 
 ```yaml
-- alert: LinuxCpuHigh
+- title: LinuxCpuHigh
   expr: ...
   for: 5m
-  labels:
-    severity: warning
   annotations:
     summary: ...
     description: ...
@@ -592,14 +572,12 @@ legacy_v2:
 
 欄位意思：
 
-- `alert`
+- `title`
   - 告警名稱
 - `expr`
   - 觸發條件
 - `for`
   - 條件連續成立多久才真的告警
-- `labels`
-  - 附加分類資訊
 - `annotations`
   - 人看的說明文字
 
@@ -758,7 +736,7 @@ legacy_v2:
 
 如果你看到某個問題，不知道要去哪裡改，建議順序：
 
-1. 先看 [README.md](/home/tuffy/project/monitor/README.md:1)
+1. 先看 [README.md](../README.md)
 2. 再看本文件
 3. 最後才看原始 YAML / JSON
 

@@ -2,7 +2,7 @@
 
 這份文件放「第一次部署」與「設備接入」的實作步驟。
 
-如果你只是想快速知道這個 repo 是做什麼、最常改哪裡，先看 [README.md](/home/tuffy/project/monitor/README.md:1)。
+如果你只是想快速知道這個 repo 是做什麼、最常改哪裡，先看 [README.md](../README.md)。
 
 ## 1. 部署前你要準備什麼
 

@@ -2,7 +2,7 @@
 
 這份文件放未來擴充這套監控平台時最常用的流程與範例。
 
-如果你是第一次部署，先看 [README.md](/home/tuffy/project/monitor/README.md:1) 與 [SETUP-GUIDE.md](./SETUP-GUIDE.md)。
+如果你是第一次部署，先看 [README.md](../README.md) 與 [SETUP-GUIDE.md](./SETUP-GUIDE.md)。
 
 ## 1. 先分清楚你要做的是哪一種
 

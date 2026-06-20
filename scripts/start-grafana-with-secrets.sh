@@ -1,8 +1,7 @@
 #!/bin/sh
 set -eu
 
-# 依序讀取 secrets，優先使用新的 Grafana Alerting 路徑，
-# 若尚未搬移，則相容舊的 Alertmanager 路徑。
+# 依序讀取 Grafana Alerting 使用的 secrets。
 read_secret() {
   for path in "$@"; do
     if [ -f "$path" ]; then
@@ -44,23 +43,15 @@ PROVISIONING_DST="/etc/grafana/provisioning"
 CONTACT_TEMPLATE="/etc/grafana/templates/contact-points.yml.tpl"
 
 if [ -z "$BOT_TOKEN" ]; then
-  BOT_TOKEN="$(pick_secret \
-    /etc/grafana/secrets/grafana-alerting/telegram_bot_token \
-    /etc/grafana/secrets/alertmanager/telegram_bot_token || true)"
+  BOT_TOKEN="$(pick_secret /etc/grafana/secrets/grafana-alerting/telegram_bot_token || true)"
 elif is_placeholder_secret "$BOT_TOKEN"; then
-  BOT_TOKEN="$(pick_secret \
-    /etc/grafana/secrets/grafana-alerting/telegram_bot_token \
-    /etc/grafana/secrets/alertmanager/telegram_bot_token || true)"
+  BOT_TOKEN="$(pick_secret /etc/grafana/secrets/grafana-alerting/telegram_bot_token || true)"
 fi
 
 if [ -z "$CHAT_ID" ]; then
-  CHAT_ID="$(pick_secret \
-    /etc/grafana/secrets/grafana-alerting/telegram_chat_id \
-    /etc/grafana/secrets/alertmanager/telegram_chat_id || true)"
+  CHAT_ID="$(pick_secret /etc/grafana/secrets/grafana-alerting/telegram_chat_id || true)"
 elif is_placeholder_secret "$CHAT_ID"; then
-  CHAT_ID="$(pick_secret \
-    /etc/grafana/secrets/grafana-alerting/telegram_chat_id \
-    /etc/grafana/secrets/alertmanager/telegram_chat_id || true)"
+  CHAT_ID="$(pick_secret /etc/grafana/secrets/grafana-alerting/telegram_chat_id || true)"
 fi
 
 if [ -z "$BOT_TOKEN" ]; then

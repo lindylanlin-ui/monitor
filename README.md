@@ -16,7 +16,6 @@
 
 - `Prometheus` 負責抓 metrics
 - `Grafana Alerting` 負責告警規則與 Telegram 通知
-- 舊版 `Prometheus rule_files + Alertmanager` 不再是正式路徑
 
 **文件導覽**
 - [文件總覽](./docs/INDEX.md)
