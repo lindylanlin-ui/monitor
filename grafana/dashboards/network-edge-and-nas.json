@@ -26,6 +26,25 @@
       },
       "fieldConfig": {
         "defaults": {
+          "max": 100,
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 70
+              },
+              {
+                "color": "red",
+                "value": 85
+              }
+            ]
+          },
           "unit": "percent"
         },
         "overrides": []
@@ -38,23 +57,29 @@
       },
       "id": 1,
       "options": {
-        "legend": {
-          "displayMode": "list",
-          "placement": "bottom"
+        "minVizHeight": 75,
+        "minVizWidth": 75,
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
         },
-        "tooltip": {
-          "mode": "single"
-        }
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true
       },
       "targets": [
         {
           "expr": "avg by (instance) (hrProcessorLoad{job=\"snmp\", instance=~\"$device\"})",
+          "instant": true,
           "legendFormat": "{{instance}}",
           "refId": "A"
         }
       ],
       "title": "SNMP CPU 負載",
-      "type": "timeseries"
+      "type": "gauge"
     },
     {
       "datasource": {
@@ -63,6 +88,25 @@
       },
       "fieldConfig": {
         "defaults": {
+          "max": 100,
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 70
+              },
+              {
+                "color": "red",
+                "value": 85
+              }
+            ]
+          },
           "unit": "percent"
         },
         "overrides": []
@@ -75,23 +119,29 @@
       },
       "id": 2,
       "options": {
-        "legend": {
-          "displayMode": "list",
-          "placement": "bottom"
+        "minVizHeight": 75,
+        "minVizWidth": 75,
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
         },
-        "tooltip": {
-          "mode": "single"
-        }
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true
       },
       "targets": [
         {
           "expr": "100 * ((memTotalReal{job=\"snmp\", instance=~\"$device\"} - memAvailReal{job=\"snmp\", instance=~\"$device\"} - memCached{job=\"snmp\", instance=~\"$device\"} - memBuffer{job=\"snmp\", instance=~\"$device\"}) / memTotalReal{job=\"snmp\", instance=~\"$device\"})",
+          "instant": true,
           "legendFormat": "{{instance}}",
           "refId": "A"
         }
       ],
       "title": "SNMP 記憶體使用率",
-      "type": "timeseries"
+      "type": "gauge"
     },
     {
       "datasource": {
@@ -301,12 +351,30 @@
           {
             "matcher": {
               "id": "byRegexp",
-              "options": ".*使用率"
+              "options": ".*已用"
             },
             "properties": [
               {
-                "id": "unit",
-                "value": "percent"
+                "id": "color",
+                "value": {
+                  "fixedColor": "red",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*可用"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "green",
+                  "mode": "fixed"
+                }
               }
             ]
           }
@@ -320,10 +388,20 @@
       },
       "id": 9,
       "options": {
-        "colorMode": "none",
-        "graphMode": "none",
-        "justifyMode": "center",
-        "orientation": "horizontal",
+        "displayLabels": [
+          "name",
+          "percent",
+          "value"
+        ],
+        "legend": {
+          "displayMode": "list",
+          "placement": "right",
+          "values": [
+            "value",
+            "percent"
+          ]
+        },
+        "pieType": "pie",
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
@@ -331,36 +409,27 @@
           "fields": "",
           "values": false
         },
-        "textMode": "value_and_name"
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
       },
       "targets": [
-        {
-          "expr": "100 * (hrStorageUsed{job=\"snmp\", instance=~\"$device\", hrStorageType=\"1.3.6.1.2.1.25.2.1.4\", hrStorageDescr=~\"/volume[0-9]+\"} / hrStorageSize{job=\"snmp\", instance=~\"$device\", hrStorageType=\"1.3.6.1.2.1.25.2.1.4\", hrStorageDescr=~\"/volume[0-9]+\"})",
-          "instant": true,
-          "legendFormat": "{{instance}} {{hrStorageDescr}} 使用率",
-          "refId": "A"
-        },
         {
           "expr": "(hrStorageUsed{job=\"snmp\", instance=~\"$device\", hrStorageType=\"1.3.6.1.2.1.25.2.1.4\", hrStorageDescr=~\"/volume[0-9]+\"} * hrStorageAllocationUnits{job=\"snmp\", instance=~\"$device\", hrStorageType=\"1.3.6.1.2.1.25.2.1.4\", hrStorageDescr=~\"/volume[0-9]+\"}) / 1073741824",
           "instant": true,
           "legendFormat": "{{instance}} {{hrStorageDescr}} 已用",
-          "refId": "B"
+          "refId": "A"
         },
         {
           "expr": "((hrStorageSize{job=\"snmp\", instance=~\"$device\", hrStorageType=\"1.3.6.1.2.1.25.2.1.4\", hrStorageDescr=~\"/volume[0-9]+\"} - hrStorageUsed{job=\"snmp\", instance=~\"$device\", hrStorageType=\"1.3.6.1.2.1.25.2.1.4\", hrStorageDescr=~\"/volume[0-9]+\"}) * hrStorageAllocationUnits{job=\"snmp\", instance=~\"$device\", hrStorageType=\"1.3.6.1.2.1.25.2.1.4\", hrStorageDescr=~\"/volume[0-9]+\"}) / 1073741824",
           "instant": true,
           "legendFormat": "{{instance}} {{hrStorageDescr}} 可用",
-          "refId": "C"
-        },
-        {
-          "expr": "(hrStorageSize{job=\"snmp\", instance=~\"$device\", hrStorageType=\"1.3.6.1.2.1.25.2.1.4\", hrStorageDescr=~\"/volume[0-9]+\"} * hrStorageAllocationUnits{job=\"snmp\", instance=~\"$device\", hrStorageType=\"1.3.6.1.2.1.25.2.1.4\", hrStorageDescr=~\"/volume[0-9]+\"}) / 1073741824",
-          "instant": true,
-          "legendFormat": "{{instance}} {{hrStorageDescr}} 總容量",
-          "refId": "D"
+          "refId": "B"
         }
       ],
       "title": "Synology 容量摘要",
-      "type": "stat"
+      "type": "piechart"
     },
     {
       "datasource": {
