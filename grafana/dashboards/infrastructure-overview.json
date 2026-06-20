@@ -77,7 +77,7 @@
           "refId": "A"
         }
       ],
-      "title": "Reachable Infrastructure Targets",
+      "title": "可連線的基礎設施目標",
       "type": "stat"
     },
     {
@@ -134,7 +134,7 @@
           "refId": "A"
         }
       ],
-      "title": "Healthy Service Probes",
+      "title": "健康的服務探測",
       "type": "stat"
     },
     {
@@ -171,7 +171,7 @@
           "refId": "A"
         }
       ],
-      "title": "Linux CPU Usage",
+      "title": "Linux CPU 使用率",
       "type": "timeseries"
     },
     {
@@ -208,7 +208,7 @@
           "refId": "A"
         }
       ],
-      "title": "Linux Memory Usage",
+      "title": "Linux 記憶體使用率",
       "type": "timeseries"
     },
     {
@@ -245,7 +245,7 @@
           "refId": "A"
         }
       ],
-      "title": "Windows CPU Usage",
+      "title": "Windows CPU 使用率",
       "type": "timeseries"
     },
     {
@@ -282,7 +282,7 @@
           "refId": "A"
         }
       ],
-      "title": "Windows Memory Usage",
+      "title": "Windows 記憶體使用率",
       "type": "timeseries"
     },
     {
@@ -324,7 +324,7 @@
           "refId": "B"
         }
       ],
-      "title": "Linux Network Throughput",
+      "title": "Linux 網路吞吐量",
       "type": "timeseries"
     },
     {
@@ -361,7 +361,7 @@
           "refId": "A"
         }
       ],
-      "title": "HTTP / TCP Probe Success",
+      "title": "HTTP / TCP 探測成功率",
       "type": "timeseries"
     }
   ],
@@ -429,7 +429,7 @@
     "to": "now"
   },
   "timezone": "browser",
-  "title": "Infrastructure Overview",
+  "title": "基礎設施總覽",
   "uid": "infra-overview",
   "version": 1,
   "weekStart": ""

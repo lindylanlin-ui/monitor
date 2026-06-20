@@ -53,7 +53,7 @@
           "refId": "A"
         }
       ],
-      "title": "SNMP CPU Load",
+      "title": "SNMP CPU 負載",
       "type": "timeseries"
     },
     {
@@ -85,12 +85,12 @@
       },
       "targets": [
         {
-          "expr": "100 * (1 - (memAvailReal{job=\"snmp\", instance=~\"$device\"} / memTotalReal{job=\"snmp\", instance=~\"$device\"}))",
+          "expr": "100 * ((memTotalReal{job=\"snmp\", instance=~\"$device\"} - memAvailReal{job=\"snmp\", instance=~\"$device\"} - memCached{job=\"snmp\", instance=~\"$device\"} - memBuffer{job=\"snmp\", instance=~\"$device\"}) / memTotalReal{job=\"snmp\", instance=~\"$device\"})",
           "legendFormat": "{{instance}}",
           "refId": "A"
         }
       ],
-      "title": "SNMP Memory Usage",
+      "title": "SNMP 記憶體使用率",
       "type": "timeseries"
     },
     {
@@ -132,7 +132,7 @@
           "refId": "B"
         }
       ],
-      "title": "SNMP Network Throughput",
+      "title": "SNMP 網路吞吐量",
       "type": "timeseries"
     },
     {
@@ -169,7 +169,7 @@
           "refId": "A"
         }
       ],
-      "title": "Load Average",
+      "title": "平均負載",
       "type": "timeseries"
     },
     {
@@ -211,7 +211,7 @@
           "refId": "B"
         }
       ],
-      "title": "Synology Temperature",
+      "title": "Synology 溫度",
       "type": "timeseries"
     },
     {
@@ -248,7 +248,7 @@
           "refId": "A"
         }
       ],
-      "title": "Synology Storage Load",
+      "title": "Synology 儲存負載",
       "type": "timeseries"
     },
     {
@@ -382,7 +382,7 @@
           }
         }
       ],
-      "title": "Synology Disk Health",
+      "title": "Synology 磁碟健康狀態",
       "type": "table"
     }
   ],
@@ -426,7 +426,7 @@
     "to": "now"
   },
   "timezone": "browser",
-  "title": "Network Edge & NAS",
+  "title": "網路與 NAS",
   "uid": "network-edge-and-nas",
   "version": 1
 }

@@ -625,7 +625,7 @@ groups:
                 type: prometheus
                 uid: prometheus
               editorMode: code
-              expr: 100 * (1 - (memAvailReal{job="snmp"} / memTotalReal{job="snmp"}))
+              expr: 100 * ((memTotalReal{job="snmp"} - memAvailReal{job="snmp"} - memCached{job="snmp"} - memBuffer{job="snmp"}) / memTotalReal{job="snmp"})
               instant: true
               intervalMs: 1000
               maxDataPoints: 43200
@@ -664,7 +664,7 @@ groups:
         for: 10m
         annotations:
           summary: "{{ range $k, $v := $values }}{{ if (match \"B[0-9]+\" $k) }}{{ if index $v.Labels \"instance\" }}{{ index $v.Labels \"instance\" }} memory usage is high{{ else }}SNMP memory usage is high{{ end }}{{ end }}{{ end }}"
-          description: "SNMP memory utilization stayed above 90% for 10 minutes."
+          description: "SNMP effective memory utilization excluding cache and buffers stayed above 90% for 10 minutes."
         labels:
           severity: warning
         isPaused: false

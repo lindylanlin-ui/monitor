@@ -103,13 +103,13 @@ groups:
           description: "SNMP CPU utilization stayed above 85% for 10 minutes."
 
       - alert: SnmpMemoryHigh
-        expr: 100 * (1 - (memAvailReal{job="snmp"} / memTotalReal{job="snmp"})) > 90
+        expr: 100 * ((memTotalReal{job="snmp"} - memAvailReal{job="snmp"} - memCached{job="snmp"} - memBuffer{job="snmp"}) / memTotalReal{job="snmp"}) > 90
         for: 10m
         labels:
           severity: warning
         annotations:
           summary: "{{ $labels.instance }} memory usage is high"
-          description: "SNMP memory utilization stayed above 90% for 10 minutes."
+          description: "SNMP effective memory utilization excluding cache and buffers stayed above 90% for 10 minutes."
 
       - alert: SynologyDiskHealthProblem
         expr: diskHealthStatus{job="snmp"} != 1

@@ -169,7 +169,7 @@ Grafana dashboard JSON 在：
 
 - [grafana/dashboards/README.md](/home/tuffy/project/monitor/grafana/dashboards/README.md:1)
 
-## 6. 本次案例：`Docker Compose Overview` 全部 `No data` 要怎麼查
+## 6. 本次案例：`Docker 總覽` 全部 `No data` 要怎麼查
 
 這次我們實際就是這樣查的。
 

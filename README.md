@@ -566,6 +566,8 @@ snmpwalk -v3 -l authPriv -u <username> -a SHA -A '<auth_password>' -x AES -X '<p
 - 記憶體使用率
   - `memAvailReal`
   - `memTotalReal`
+  - `memCached`
+  - `memBuffer`
 - 網路流量
   - `ifHCInOctets`
   - `ifHCOutOctets`
@@ -629,10 +631,12 @@ snmpwalk -v2c -c <community> <ER-X_IP> 1.3.6.1.2.1.1.1.0
 - 記憶體使用率
   - `memAvailReal`
   - `memTotalReal`
+  - `memCached`
+  - `memBuffer`
 - 網路流量
   - `ifHCInOctets`
   - `ifHCOutOctets`
-- Load Average
+- 平均負載
   - `laLoadFloat`
 - 系統運作時間
   - `hrSystemUptime`
@@ -705,9 +709,9 @@ snmpwalk -v2c -c <community> <ER-X_IP> 1.3.6.1.2.1.1.1.0
 
 預設 dashboard 有三個：
 
-- `Infrastructure Overview`
-- `Docker Compose Overview`
-- `Network Edge & NAS`
+- `基礎設施總覽`
+- `Docker 總覽`
+- `網路與 NAS`
 
 ### 6.3 Grafana Alerting
 
@@ -725,7 +729,7 @@ snmpwalk -v2c -c <community> <ER-X_IP> 1.3.6.1.2.1.1.1.0
 
 ## 8. 每個 Dashboard 的用途與觀察重點
 
-### 7.1 Infrastructure Overview
+### 7.1 基礎設施總覽
 
 用途：
 
@@ -740,7 +744,7 @@ snmpwalk -v2c -c <community> <ER-X_IP> 1.3.6.1.2.1.1.1.0
 - Linux 網路流量是否異常突然升高
 - 某些服務 probe 是否間歇性失敗
 
-### 7.2 Docker Compose Overview
+### 7.2 Docker 總覽
 
 用途：
 
@@ -753,7 +757,7 @@ snmpwalk -v2c -c <community> <ER-X_IP> 1.3.6.1.2.1.1.1.0
 - 哪個 service 網路流量特別高
 - 某些容器啟動時間是否頻繁重置，代表可能在重啟
 
-### 7.3 Network Edge & NAS
+### 7.3 網路與 NAS
 
 用途：
 

@@ -58,7 +58,7 @@
           "refId": "A"
         }
       ],
-      "title": "Observed Containers",
+      "title": "已觀測容器數",
       "type": "stat"
     },
     {
@@ -95,7 +95,7 @@
           "refId": "A"
         }
       ],
-      "title": "Container CPU Usage",
+      "title": "容器 CPU 使用率",
       "type": "timeseries"
     },
     {
@@ -132,7 +132,7 @@
           "refId": "A"
         }
       ],
-      "title": "Container Memory Working Set",
+      "title": "容器記憶體使用量",
       "type": "timeseries"
     },
     {
@@ -174,7 +174,7 @@
           "refId": "B"
         }
       ],
-      "title": "Container Network Throughput",
+      "title": "容器網路吞吐量",
       "type": "timeseries"
     },
     {
@@ -211,7 +211,7 @@
           "refId": "A"
         }
       ],
-      "title": "Container Uptime",
+      "title": "容器運行時間",
       "type": "timeseries"
     }
   ],
@@ -255,7 +255,7 @@
     "to": "now"
   },
   "timezone": "browser",
-  "title": "Docker Compose Overview",
+  "title": "Docker 總覽",
   "uid": "docker-compose-overview",
   "version": 1
 }
