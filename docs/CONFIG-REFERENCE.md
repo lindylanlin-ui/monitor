@@ -113,6 +113,8 @@
   - `up < 1`，持續 `2m`
 - `ServiceProbeFailed`
   - `probe_success < 1`，持續 `2m`
+- `AccessPointPingFailed`
+  - `probe_success{job="blackbox-icmp", role="access-point"} < 1`，持續 `2m`
 - `LinuxCpuHigh`
   - `> 85%`，持續 `5m`
 - `LinuxMemoryHigh`
@@ -173,6 +175,15 @@
 - `prometheus.yml` 是監控邏輯
 - `file_sd/*.yml` 是設備名單
 
+其中常見檔案：
+
+- `http-services.yml`
+  - HTTP / HTTPS 可用性探測
+- `tcp-services.yml`
+  - TCP 連接埠可用性探測
+- `icmp-services.yml` / `icmp-services.local.yml`
+  - ICMP ping 探測，適合 AP、印表機、交換器
+
 ### `snmp/auths.local.yml`
 
 用途：
@@ -232,6 +243,7 @@ global:
 - `snmp`
 - `blackbox-http`
 - `blackbox-tcp`
+- `blackbox-icmp`
 
 #### `job_name`
 
@@ -368,6 +380,18 @@ global:
 用途：
 
 - 檢查 TCP 服務能不能建立連線
+
+### `blackbox-icmp`
+
+用途：
+
+- 檢查裝置是否能被 ping 到
+- 適合 AP、印表機、交換器、攝影機等設備
+
+主要看：
+
+- `probe_success`
+- `probe_duration_seconds`
 
 ## 4. `file_sd` 檔案怎麼看
 
@@ -730,6 +754,7 @@ legacy_v2:
 - Windows：`prometheus/file_sd/windows-hosts.local.yml`
 - SNMP：`prometheus/file_sd/snmp-devices.local.yml`
 - HTTP / TCP probe：`prometheus/file_sd/http-services.yml`、`prometheus/file_sd/tcp-services.yml`
+- ICMP probe：`prometheus/file_sd/icmp-services.local.yml`
 - SNMP 模組本身：`snmp/modules.yml`
 
 ## 11. 未來回頭看時建議先讀哪裡

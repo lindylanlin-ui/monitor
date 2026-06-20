@@ -109,6 +109,25 @@ scrape_configs:
       - target_label: __address__
         replacement: blackbox-exporter:9115
 
+  # 監控 ICMP 可達性，適合檢查 AP、印表機、交換器等只有存活需求的設備。
+  - job_name: blackbox-icmp
+    metrics_path: /probe
+    params:
+      module:
+        - icmp
+    file_sd_configs:
+      - files:
+          - /etc/prometheus/file_sd/icmp-services.yml
+          - /etc/prometheus/file_sd/icmp-services.local.yml
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [service]
+        regex: (.+)
+        target_label: instance
+      - target_label: __address__
+        replacement: blackbox-exporter:9115
+
   # 監控透過 SNMP 暴露資訊的設備，例如 Synology 與 ER-X。
   # snmp_module 與 snmp_auth 會從 file_sd label 帶入。
   - job_name: snmp

@@ -461,7 +461,7 @@
           "refId": "A"
         }
       ],
-      "title": "HTTP / TCP 探測成功率",
+      "title": "HTTP / TCP / ICMP 探測成功率",
       "type": "timeseries"
     },
     {
@@ -576,7 +576,7 @@
           "type": "prometheus",
           "uid": "prometheus"
         },
-        "definition": "label_values(probe_success, instance)",
+        "definition": "query_result(max by (instance) (max_over_time(probe_success[5m])))",
         "hide": 0,
         "includeAll": true,
         "label": "Service",
@@ -584,9 +584,10 @@
         "name": "service",
         "options": [],
         "query": {
-          "query": "label_values(probe_success, instance)",
+          "query": "query_result(max by (instance) (max_over_time(probe_success[5m])))",
           "refId": "Prometheus-service"
         },
+        "regex": "/instance=\"([^\"]+)\"/",
         "refresh": 1,
         "type": "query"
       }

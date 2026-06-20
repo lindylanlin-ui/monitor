@@ -419,6 +419,35 @@ curl -s "https://api.telegram.org/bot${TOKEN}/sendMessage" \
 - chat id 填成 bot id
 - 群組 / 私訊對象不對
 
+## 10. ICMP probe 沒資料怎麼查
+
+先看 Prometheus target：
+
+```bash
+curl -fsS --get 'http://127.0.0.1:9090/api/v1/query' \
+  --data-urlencode 'query=up{job="blackbox-icmp"}' | jq
+```
+
+再看 probe 成功與否：
+
+```bash
+curl -fsS --get 'http://127.0.0.1:9090/api/v1/query' \
+  --data-urlencode 'query=probe_success{job="blackbox-icmp"}' | jq
+```
+
+你要對照：
+
+- `prometheus/file_sd/icmp-services.local.yml`
+- `prometheus/blackbox.yml`
+- `prometheus/prometheus.yml`
+
+常見原因：
+
+- 裝置 IP 填錯
+- 監控主機到 AP 之間不通
+- 裝置或上游設備擋掉 ICMP
+- Prometheus 還沒重載
+
 ### 看 Grafana Alerting log
 
 ```bash

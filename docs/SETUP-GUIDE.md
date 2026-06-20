@@ -52,6 +52,7 @@ make bootstrap
 - `snmp/auths.local.yml`
 - `prometheus/file_sd/windows-hosts.local.yml`
 - `prometheus/file_sd/snmp-devices.local.yml`
+- `prometheus/file_sd/icmp-services.local.yml`
 - `prometheus/data`
 - `grafana/data`
 - `grafana/runtime`
@@ -121,10 +122,29 @@ make bootstrap
 - `snmp_auth`
 - `snmp_module`
 
-### 3.3 HTTP / TCP 服務探測
+### 3.3 HTTP / TCP / ICMP 服務探測
 
 - HTTP / HTTPS：改 `prometheus/file_sd/http-services.yml`
 - TCP：改 `prometheus/file_sd/tcp-services.yml`
+- ICMP：改 `prometheus/file_sd/icmp-services.local.yml`
+
+TP-Link Deco X20 這類家用 AP 若沒有提供 SNMP，建議至少先做 ICMP 探測。
+
+範例：
+
+```yaml
+- targets: ["192.168.1.50"]
+  labels:
+    service: tplink-x20-ping
+    role: access-point
+    site: home
+```
+
+如果你想間接看 X20 的 uplink 流量，則改從 `ER-X` 那一側觀察：
+
+1. 打開 `網路與 NAS` dashboard
+2. 在 `Router Port` 變數選擇 X20 接到的那個 `ER-X` 介面
+3. 觀察 `ER-X AP Uplink 流量` 面板
 
 ## 4. 驗證與啟動
 

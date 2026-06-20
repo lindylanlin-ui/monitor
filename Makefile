@@ -7,6 +7,7 @@ bootstrap:
 	@if [ ! -f snmp/auths.local.yml ]; then cp snmp/auths.example.yml snmp/auths.local.yml; fi
 	@if [ ! -f prometheus/file_sd/windows-hosts.local.yml ]; then printf '[]\n' > prometheus/file_sd/windows-hosts.local.yml; fi
 	@if [ ! -f prometheus/file_sd/snmp-devices.local.yml ]; then printf '[]\n' > prometheus/file_sd/snmp-devices.local.yml; fi
+	@if [ ! -f prometheus/file_sd/icmp-services.local.yml ]; then printf '[]\n' > prometheus/file_sd/icmp-services.local.yml; fi
 	@mkdir -p prometheus/data grafana/data grafana/runtime snmp/generated
 	@chmod 0777 grafana/runtime
 	@mkdir -p secrets/grafana-alerting

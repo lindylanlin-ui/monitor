@@ -54,9 +54,10 @@
   - dashboard 看 `grafana/dashboards/docker-compose-overview.json`
   - 文件看 [CONFIG-REFERENCE.md](./CONFIG-REFERENCE.md)
 
-- HTTP / TCP 服務可用性探測
-  - HTTP target 看 `prometheus/file_sd/probe-http.local.yml`
-  - TCP target 看 `prometheus/file_sd/probe-tcp.local.yml`
+- HTTP / TCP / ICMP 服務與裝置可用性探測
+  - HTTP target 看 `prometheus/file_sd/http-services.yml`
+  - TCP target 看 `prometheus/file_sd/tcp-services.yml`
+  - ICMP target 看 `prometheus/file_sd/icmp-services.local.yml`
   - Prometheus job 看 `prometheus/prometheus.yml`
   - dashboard 看 `grafana/dashboards/infrastructure-overview.json`
   - 文件看 [SETUP-GUIDE.md](./SETUP-GUIDE.md) 與 [CONFIG-REFERENCE.md](./CONFIG-REFERENCE.md)

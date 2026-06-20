@@ -8,7 +8,7 @@
 - Windows VM 監控
 - Synology NAS 與 ER-X Router 的 SNMP 監控
 - Docker Compose 容器監控
-- HTTP / TCP 服務可用性探測
+- HTTP / TCP / ICMP 服務與裝置可用性探測
 - Grafana dashboard 自動匯入
 - Grafana Alerting + Telegram 通知
 
@@ -44,6 +44,7 @@ make bootstrap
 - `snmp/auths.local.yml`
 - `prometheus/file_sd/windows-hosts.local.yml`
 - `prometheus/file_sd/snmp-devices.local.yml`
+- `prometheus/file_sd/icmp-services.local.yml`
 - `secrets/grafana-alerting/telegram_bot_token`
 - `secrets/grafana-alerting/telegram_chat_id`
 
@@ -74,7 +75,7 @@ make ps
 **你可能先想看這些**
 - 想知道某個功能要改哪個檔案：
   - 看 [文件總覽](./docs/INDEX.md)
-- 想新增 Linux / Windows / SNMP / HTTP / TCP target：
+- 想新增 Linux / Windows / SNMP / HTTP / TCP / ICMP target：
   - 看 [詳細建置指南](./docs/SETUP-GUIDE.md)
 - 想新增 dashboard 或調整圖表：
   - 看 [Grafana Dashboard 說明](./docs/DASHBOARDS.md)
@@ -109,6 +110,7 @@ docker compose up -d prometheus
 **目前已提供的告警類型**
 - `TargetDown`
 - `ServiceProbeFailed`
+- `AccessPointPingFailed`
 - `LinuxCpuHigh`
 - `LinuxMemoryHigh`
 - `LinuxRootDiskHigh`

@@ -564,6 +564,48 @@
       ],
       "title": "Synology 磁碟健康狀態",
       "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bps"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 40
+      },
+      "id": 10,
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "single"
+        }
+      },
+      "targets": [
+        {
+          "expr": "rate(ifHCInOctets{job=\"snmp\", instance=\"erx-router\", ifDescr=~\"$router_port\"}[5m]) * 8",
+          "legendFormat": "{{ifDescr}} in",
+          "refId": "A"
+        },
+        {
+          "expr": "rate(ifHCOutOctets{job=\"snmp\", instance=\"erx-router\", ifDescr=~\"$router_port\"}[5m]) * 8",
+          "legendFormat": "{{ifDescr}} out",
+          "refId": "B"
+        }
+      ],
+      "title": "ER-X AP Uplink 流量",
+      "type": "timeseries"
     }
   ],
   "refresh": "30s",
@@ -595,6 +637,30 @@
         "query": {
           "query": "label_values(up{job=\"snmp\"}, instance)",
           "refId": "Prometheus-snmp"
+        },
+        "refresh": 1,
+        "type": "query"
+      },
+      {
+        "current": {
+          "selected": true,
+          "text": ".*",
+          "value": ".*"
+        },
+        "datasource": {
+          "type": "prometheus",
+          "uid": "prometheus"
+        },
+        "definition": "label_values(ifHCInOctets{job=\"snmp\", instance=\"erx-router\"}, ifDescr)",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Router Port",
+        "multi": false,
+        "name": "router_port",
+        "options": [],
+        "query": {
+          "query": "label_values(ifHCInOctets{job=\"snmp\", instance=\"erx-router\"}, ifDescr)",
+          "refId": "Prometheus-router-port"
         },
         "refresh": 1,
         "type": "query"

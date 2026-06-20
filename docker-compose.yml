@@ -118,6 +118,8 @@ services:
     image: prom/blackbox-exporter:${BLACKBOX_EXPORTER_VERSION}
     container_name: monitoring-blackbox-exporter
     restart: unless-stopped
+    cap_add:
+      - CAP_NET_RAW
     command:
       - --config.file=/etc/blackbox_exporter/blackbox.yml
     volumes:

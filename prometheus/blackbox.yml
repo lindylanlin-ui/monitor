@@ -1,6 +1,7 @@
 # Blackbox Exporter 模組設定。
 # http_2xx: 用來檢查 HTTP/HTTPS 是否成功回應。
 # tcp_connect: 只檢查 TCP 三向交握能不能成功建立。
+# icmp: 用來檢查裝置是否能被 ping 到。
 modules:
   http_2xx:
     prober: http
@@ -13,4 +14,9 @@ modules:
     prober: tcp
     timeout: 5s
     tcp:
+      preferred_ip_protocol: ip4
+  icmp:
+    prober: icmp
+    timeout: 5s
+    icmp:
       preferred_ip_protocol: ip4

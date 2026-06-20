@@ -1,0 +1,19 @@
+# 這個檔案列出要做 ICMP 探測的裝置。
+# Blackbox Exporter 會定期發送 ping，確認設備是否在線。
+#
+# 適合放在這裡的項目：
+# AP、印表機、交換器、攝影機、家用 IoT 設備，或其他不方便做 HTTP/TCP 探測的設備。
+#
+# 主要觀察指標：
+# probe_success: 1 代表 ping 成功，0 代表失敗
+# probe_duration_seconds: 往返耗時
+#
+# 你的真實裝置位址建議放到 icmp-services.local.yml。
+#
+# 範例：
+# - targets: ["192.168.1.50"]
+#   labels:
+#     service: tplink-x20-ping
+#     role: access-point
+#     site: home
+[]

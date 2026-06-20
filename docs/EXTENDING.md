@@ -40,6 +40,7 @@ curl -fsS --get 'http://127.0.0.1:9090/api/v1/query' \
 - Windows：`prometheus/file_sd/windows-hosts.local.yml`
 - SNMP：`prometheus/file_sd/snmp-devices.local.yml`
 - HTTP / TCP probe：`prometheus/file_sd/http-services.yml`、`prometheus/file_sd/tcp-services.yml`
+- ICMP probe：`prometheus/file_sd/icmp-services.local.yml`
 - SNMP 模組：`snmp/modules.yml`
 
 ## 3. 新增 dashboard 面板的標準流程
@@ -204,7 +205,7 @@ diskHealthStatus{job="snmp"} != bool 1
 適合：
 
 - exporter / SNMP target
-- HTTP / TCP probe
+- HTTP / TCP / ICMP probe
 
 範例：
 
@@ -222,6 +223,38 @@ probe_success < 1
 
 - 最常見誤報來源是短暫網路抖動
 - `for:` 通常不要小於 `2m`
+
+### 範例 E：家用 AP 的間接監控
+
+情境：
+
+- 例如 `TP-Link Deco X20` 這類家用 AP 不一定支援 SNMP
+- 但你還是想知道它有沒有活著，以及 uplink 流量大不大
+
+做法：
+
+1. 用 `ICMP probe` 監控 AP 在線狀態
+2. 用 `ER-X` 的介面流量，間接看它連接的 uplink port
+
+ICMP 目標範例：
+
+```yaml
+- targets: ["192.168.1.50"]
+  labels:
+    service: tplink-x20-ping
+    role: access-point
+    site: home
+```
+
+ER-X uplink PromQL 範例：
+
+```promql
+rate(ifHCInOctets{job="snmp", instance="erx-router", ifDescr="eth2"}[5m]) * 8
+```
+
+```promql
+rate(ifHCOutOctets{job="snmp", instance="erx-router", ifDescr="eth2"}[5m]) * 8
+```
 
 ## 8. 從 dashboard query 轉成 alert query
 
