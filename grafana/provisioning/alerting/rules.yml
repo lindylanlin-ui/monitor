@@ -169,7 +169,7 @@ groups:
                 type: prometheus
                 uid: prometheus
               editorMode: code
-              expr: max by (instance, job, role, site) (probe_success{job="blackbox-icmp", role="access-point"})
+              expr: max by (instance, job, role, site) (probe_success{job="blackbox-icmp", role="access-point", service!="study-room-ap-ping"})
               instant: true
               intervalMs: 1000
               maxDataPoints: 43200
