@@ -245,6 +245,7 @@ docker logs --tail 80 monitoring-cadvisor
 - `Registration of the docker container factory failed`
 - `Registration of the containerd container factory failed`
 - `Registration of the docker container factory successfully`
+- `dial unix /run/containerd/containerd.sock: connect: no such file or directory`
 
 這次就是在 log 裡看到：
 
@@ -252,6 +253,21 @@ docker logs --tail 80 monitoring-cadvisor
 - 後來補掛載後變成 `docker factory successfully`
 
 這就可以很明確知道問題不在 Grafana，而在 cAdvisor 沒正確接上 Docker runtime。
+
+如果你的 Docker 是 snap 安裝版，還要特別注意一個重開機後常見陷阱：
+
+- 宿主機真正的 socket 常在 `/run/snap.docker/containerd/containerd.sock`
+- 但 cAdvisor 預設會找 `/run/containerd/containerd.sock`
+- 如果同時把整個 `/var/run` 掛進容器，又另外把 snap 的 containerd 目錄掛到 `/run/containerd`，重開後 cAdvisor 仍可能實際看到宿主機原本的 `/run/containerd`
+- 這種情況下 Prometheus 的 `up{job="cadvisor"}` 仍然會是 `1`，但 `container_label_com_docker_compose_project` / `container_label_com_docker_compose_service` 會全部消失，Grafana 的 `Docker 總覽` 就會整頁 `No data`
+
+這個 repo 目前的修法是讓 cAdvisor 明確使用：
+
+```bash
+--containerd=/var/run/snap.docker/containerd/containerd.sock
+```
+
+這樣比把 snap 路徑額外 bind 到 `/run/containerd` 更穩定。
 
 ### 第 6 步：查 Docker runtime 路徑
 
