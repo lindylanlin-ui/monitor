@@ -6,4 +6,7 @@ grafana/runtime/
 prometheus/data/
 alertmanager/data/
 secrets/
+logs/*.log
+logs/*.log-*
+logs/*.gz
 需求說明.txt

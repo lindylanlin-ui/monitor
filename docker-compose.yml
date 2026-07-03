@@ -5,6 +5,9 @@ services:
     image: prom/prometheus:${PROMETHEUS_VERSION}
     container_name: monitoring-prometheus
     restart: unless-stopped
+    entrypoint:
+      - /bin/sh
+      - -c
     # 啟動參數說明：
     # --config.file: Prometheus 主設定檔。
     # --storage.tsdb.path: 指標資料保存路徑。
@@ -12,11 +15,16 @@ services:
     # --web.enable-lifecycle: 允許之後用 HTTP 重新載入設定。
     # --web.external-url: 對外服務網址，供 UI 與反向代理使用。
     command:
-      - --config.file=/etc/prometheus/prometheus.yml
-      - --storage.tsdb.path=/prometheus
-      - --storage.tsdb.retention.time=${PROMETHEUS_RETENTION}
-      - --web.enable-lifecycle
-      - --web.external-url=${PROMETHEUS_EXTERNAL_URL}
+      - >
+        exec /bin/prometheus
+        --config.file=/etc/prometheus/prometheus.yml
+        --storage.tsdb.path=/prometheus
+        --storage.tsdb.retention.time=${PROMETHEUS_RETENTION}
+        --web.enable-lifecycle
+        --web.external-url=${PROMETHEUS_EXTERNAL_URL}
+        >> /var/log/project/prometheus.log 2>&1
+    logging:
+      driver: none
     # 對外開放 Prometheus UI / API。
     ports:
       - "${PROMETHEUS_PORT}:9090"
@@ -31,6 +39,7 @@ services:
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - ./prometheus/file_sd:/etc/prometheus/file_sd:ro
       - ./prometheus/data:/prometheus
+      - ./logs:/var/log/project
     networks:
       - monitoring
 
@@ -56,7 +65,13 @@ services:
       GF_DATE_FORMATS_DEFAULT_TIMEZONE: browser
     entrypoint:
       - /bin/sh
-      - /usr/local/bin/start-grafana-with-secrets.sh
+      - -c
+    command:
+      - >
+        exec /bin/sh /usr/local/bin/start-grafana-with-secrets.sh
+        >> /var/log/project/grafana.log 2>&1
+    logging:
+      driver: none
     volumes:
       # provisioning-src 放 Git 追蹤的靜態模板，真正提供給 Grafana 讀取的是 runtime 目錄。
       - ./grafana/provisioning:/etc/grafana/provisioning-src:ro
@@ -64,6 +79,7 @@ services:
       - ./grafana/templates:/etc/grafana/templates:ro
       - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
       - ./grafana/data:/var/lib/grafana
+      - ./logs:/var/log/project
       # Grafana Alerting 的 Telegram secrets 放在 secrets/grafana-alerting。
       - ./secrets:/etc/grafana/secrets:ro
       - ./scripts/start-grafana-with-secrets.sh:/usr/local/bin/start-grafana-with-secrets.sh:ro
@@ -76,18 +92,27 @@ services:
     container_name: monitoring-node-exporter
     restart: unless-stopped
     pid: host
+    entrypoint:
+      - /bin/sh
+      - -c
     # 這些參數讓容器內的 exporter 可以看到宿主機的 /proc、/sys、rootfs。
     command:
-      - --path.rootfs=/host
-      - --path.procfs=/host/proc
-      - --path.sysfs=/host/sys
-      - --collector.systemd
-      - --collector.filesystem.mount-points-exclude=^/(dev|proc|sys|run/credentials/.+|var/lib/docker/.+)($|/)
-      - --collector.filesystem.fs-types-exclude=^(autofs|binfmt_misc|bpf|cgroup2?|configfs|debugfs|devpts|devtmpfs|fusectl|mqueue|nsfs|overlay|proc|pstore|securityfs|selinuxfs|squashfs|sysfs|tracefs)$
+      - >
+        exec /bin/node_exporter
+        --path.rootfs=/host
+        --path.procfs=/host/proc
+        --path.sysfs=/host/sys
+        --collector.systemd
+        '--collector.filesystem.mount-points-exclude=^/(dev|proc|sys|run/credentials/.+|var/lib/docker/.+)($|/)'
+        '--collector.filesystem.fs-types-exclude=^(autofs|binfmt_misc|bpf|cgroup2?|configfs|debugfs|devpts|devtmpfs|fusectl|mqueue|nsfs|overlay|proc|pstore|securityfs|selinuxfs|squashfs|sysfs|tracefs)$'
+        >> /var/log/project/node-exporter.log 2>&1
+    logging:
+      driver: none
     volumes:
       # 某些 Linux 發行版的根掛載不是 shared/slave，rslave 會導致容器無法啟動。
       # 這裡改成一般唯讀掛載即可滿足 node-exporter 的主機檔案系統讀取需求。
       - /:/host:ro
+      - ./logs:/var/log/project
     networks:
       - monitoring
 
@@ -98,11 +123,19 @@ services:
     container_name: monitoring-cadvisor
     restart: unless-stopped
     privileged: true
+    entrypoint:
+      - /bin/sh
+      - -c
     command:
       # snap 版 Docker 的 containerd socket 在 /var/run/snap.docker/containerd/containerd.sock。
       # 明確指定可避免 /var/run 掛載下的 /run/containerd 與宿主機其他 runtime 路徑混淆，
       # 導致 cAdvisor 只抓到 systemd cgroup、Grafana 的 Docker dashboard 全部 No data。
-      - --containerd=/var/run/snap.docker/containerd/containerd.sock
+      - >
+        exec /usr/bin/entrypoint.sh
+        --containerd=/var/run/snap.docker/containerd/containerd.sock
+        >> /var/log/project/cadvisor.log 2>&1
+    logging:
+      driver: none
     devices:
       - /dev/kmsg
     # cAdvisor 需要讀取 Docker 與 Linux 核心資訊，因此會掛載多個宿主機目錄。
@@ -114,6 +147,7 @@ services:
       # 一般 apt 安裝常見為 /var/lib/docker，snap 安裝常見為 /var/snap/docker/common/var-lib-docker。
       - ${DOCKER_ROOT_DIR}:/var/lib/docker:ro
       - /dev/disk:/dev/disk:ro
+      - ./logs:/var/log/project
     networks:
       - monitoring
 
@@ -124,10 +158,19 @@ services:
     restart: unless-stopped
     cap_add:
       - CAP_NET_RAW
+    entrypoint:
+      - /bin/sh
+      - -c
     command:
-      - --config.file=/etc/blackbox_exporter/blackbox.yml
+      - >
+        exec /bin/blackbox_exporter
+        --config.file=/etc/blackbox_exporter/blackbox.yml
+        >> /var/log/project/blackbox-exporter.log 2>&1
+    logging:
+      driver: none
     volumes:
       - ./prometheus/blackbox.yml:/etc/blackbox_exporter/blackbox.yml:ro
+      - ./logs:/var/log/project
     networks:
       - monitoring
 
@@ -139,12 +182,19 @@ services:
     # 先把本機驗證檔與模組檔合併成最終 snmp.yml，再啟動 exporter。
     entrypoint:
       - /bin/sh
-      - -ec
-      - render-snmp-config.sh; exec /bin/snmp_exporter --config.file=/etc/snmp_exporter/snmp.yml
+      - -c
+    command:
+      - >
+        { render-snmp-config.sh;
+        exec /bin/snmp_exporter --config.file=/etc/snmp_exporter/snmp.yml; }
+        >> /var/log/project/snmp-exporter.log 2>&1
+    logging:
+      driver: none
     volumes:
       - ./snmp:/etc/snmp-config:ro
       - ./scripts/render-snmp-config.sh:/usr/local/bin/render-snmp-config.sh:ro
       - ./snmp/generated:/etc/snmp_exporter
+      - ./logs:/var/log/project
     networks:
       - monitoring
 
