@@ -102,7 +102,6 @@ services:
         --path.rootfs=/host
         --path.procfs=/host/proc
         --path.sysfs=/host/sys
-        --collector.systemd
         '--collector.filesystem.mount-points-exclude=^/(dev|proc|sys|run/credentials/.+|var/lib/docker/.+)($|/)'
         '--collector.filesystem.fs-types-exclude=^(autofs|binfmt_misc|bpf|cgroup2?|configfs|debugfs|devpts|devtmpfs|fusectl|mqueue|nsfs|overlay|proc|pstore|securityfs|selinuxfs|squashfs|sysfs|tracefs)$'
         >> /var/log/project/node-exporter.log 2>&1
