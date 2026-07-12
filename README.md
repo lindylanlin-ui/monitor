@@ -106,6 +106,8 @@ docker compose up -d prometheus
   - 容器 CPU / RAM / Network / uptime
 - `network-edge-and-nas`
   - NAS / Router 的 SNMP 指標、容量、磁碟健康、流量尖峰觀察
+- `public-status-overview`
+  - 可公開分享的匿名化狀態中心（不顯示主機、服務、IP 或內網細節）
 
 **目前已提供的告警類型**
 - `TargetDown`

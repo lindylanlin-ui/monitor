@@ -1,0 +1,208 @@
+{
+  "annotations": { "list": [] },
+  "description": "供公開分享的匿名狀態中心；只顯示彙總健康度、資源壓力與趨勢，不揭露主機、服務、IP、URL、容器或網路拓撲。",
+  "editable": true,
+  "links": [],
+  "panels": [
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "description": "所有服務探測與核心基礎設施目前皆正常時顯示營運正常。",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [{ "options": { "0": { "color": "red", "index": 1, "text": "部分異常" }, "1": { "color": "green", "index": 0, "text": "正常" } }, "type": "value" }],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "green", "value": 1 }] }
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 6, "w": 6, "x": 0, "y": 0 },
+      "id": 1,
+      "options": { "colorMode": "background", "graphMode": "none", "justifyMode": "center", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "textMode": "value_and_name", "wideLayout": true },
+      "targets": [{ "expr": "min(probe_success or up{job=~\"node-exporter|windows-exporter|snmp|prometheus|cadvisor\"})", "instant": true, "legendFormat": "整體狀態", "refId": "A" }],
+      "title": "整體狀態",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" }, "decimals": 2, "max": 100, "min": 0,
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "orange", "value": 99 }, { "color": "green", "value": 99.9 }] },
+          "unit": "percent"
+        }, "overrides": []
+      },
+      "gridPos": { "h": 6, "w": 6, "x": 6, "y": 0 },
+      "id": 2,
+      "options": { "colorMode": "background", "graphMode": "area", "justifyMode": "center", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "textMode": "value_and_name", "wideLayout": true },
+      "targets": [{ "expr": "100 * avg(avg_over_time(probe_success[24h]))", "legendFormat": "最近 24 小時", "refId": "A" }],
+      "title": "24 小時服務可用性",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" }, "decimals": 0,
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "orange", "value": 500 }, { "color": "red", "value": 1000 }] },
+          "unit": "ms"
+        }, "overrides": []
+      },
+      "gridPos": { "h": 6, "w": 6, "x": 12, "y": 0 },
+      "id": 3,
+      "options": { "colorMode": "background", "graphMode": "area", "justifyMode": "center", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "textMode": "value_and_name", "wideLayout": true },
+      "targets": [{ "expr": "1000 * quantile(0.95, probe_duration_seconds)", "legendFormat": "目前 P95", "refId": "A" }],
+      "title": "服務回應時間",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" }, "decimals": 0,
+          "mappings": [{ "options": { "0": { "color": "green", "index": 0, "text": "無異常" } }, "type": "value" }],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "red", "value": 1 }] }
+        }, "overrides": []
+      },
+      "gridPos": { "h": 6, "w": 6, "x": 18, "y": 0 },
+      "id": 4,
+      "options": { "colorMode": "background", "graphMode": "none", "justifyMode": "center", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "textMode": "value_and_name", "wideLayout": true },
+      "targets": [{ "expr": "sum(1 - probe_success) + sum(1 - up{job=~\"node-exporter|windows-exporter|snmp|prometheus|cadvisor\"})", "instant": true, "legendFormat": "異常項目", "refId": "A" }],
+      "title": "目前異常項目",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "color": { "mode": "fixed_color" }, "decimals": 0, "thresholds": { "mode": "absolute", "steps": [{ "color": "blue", "value": null }] } }, "overrides": [] },
+      "gridPos": { "h": 5, "w": 6, "x": 0, "y": 6 },
+      "id": 5,
+      "options": { "colorMode": "value", "graphMode": "area", "justifyMode": "center", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "textMode": "value_and_name" },
+      "targets": [{ "expr": "count(probe_success)", "legendFormat": "服務檢查", "refId": "A" }],
+      "title": "監測中的服務",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "color": { "mode": "fixed_color" }, "decimals": 0, "thresholds": { "mode": "absolute", "steps": [{ "color": "purple", "value": null }] } }, "overrides": [] },
+      "gridPos": { "h": 5, "w": 6, "x": 6, "y": 6 },
+      "id": 6,
+      "options": { "colorMode": "value", "graphMode": "area", "justifyMode": "center", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "textMode": "value_and_name" },
+      "targets": [{ "expr": "count(up{job=~\"node-exporter|windows-exporter|snmp|prometheus|cadvisor\"})", "legendFormat": "核心元件", "refId": "A" }],
+      "title": "受監控基礎設施",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "color": { "mode": "fixed_color" }, "decimals": 0, "thresholds": { "mode": "absolute", "steps": [{ "color": "orange", "value": null }] } }, "overrides": [] },
+      "gridPos": { "h": 5, "w": 6, "x": 12, "y": 6 },
+      "id": 7,
+      "options": { "colorMode": "value", "graphMode": "area", "justifyMode": "center", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "textMode": "value_and_name" },
+      "targets": [{ "expr": "count(container_last_seen{job=\"cadvisor\", image!=\"\"})", "legendFormat": "運行中", "refId": "A" }],
+      "title": "受監控容器",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [{ "options": { "1": { "color": "green", "index": 0, "text": "健康" } }, "type": "value" }],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "green", "value": 1 }] }
+        }, "overrides": []
+      },
+      "gridPos": { "h": 5, "w": 6, "x": 18, "y": 6 },
+      "id": 8,
+      "options": { "colorMode": "value", "graphMode": "none", "justifyMode": "center", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "textMode": "value_and_name" },
+      "targets": [{ "expr": "min(diskHealthStatus{job=\"snmp\"})", "instant": true, "legendFormat": "磁碟狀態", "refId": "A" }],
+      "title": "儲存設備健康",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "color": { "mode": "thresholds" }, "decimals": 1, "max": 100, "min": 0, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "orange", "value": 70 }, { "color": "red", "value": 85 }] }, "unit": "percent" }, "overrides": [] },
+      "gridPos": { "h": 7, "w": 8, "x": 0, "y": 11 },
+      "id": 9,
+      "options": { "minVizHeight": 75, "minVizWidth": 75, "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "showThresholdLabels": false, "showThresholdMarkers": true },
+      "targets": [{ "expr": "max(100 * (1 - avg by (instance) (rate(node_cpu_seconds_total{job=\"node-exporter\", mode=\"idle\"}[5m]))) or 100 * (1 - avg by (instance) (rate(windows_cpu_time_total{job=\"windows-exporter\", mode=\"idle\"}[5m]))) or avg by (instance) (hrProcessorLoad{job=\"snmp\"}))", "instant": true, "legendFormat": "最高使用率", "refId": "A" }],
+      "title": "CPU 壓力",
+      "type": "gauge"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "color": { "mode": "thresholds" }, "decimals": 1, "max": 100, "min": 0, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "orange", "value": 70 }, { "color": "red", "value": 85 }] }, "unit": "percent" }, "overrides": [] },
+      "gridPos": { "h": 7, "w": 8, "x": 8, "y": 11 },
+      "id": 10,
+      "options": { "minVizHeight": 75, "minVizWidth": 75, "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "showThresholdLabels": false, "showThresholdMarkers": true },
+      "targets": [{ "expr": "max(100 * (1 - node_memory_MemAvailable_bytes{job=\"node-exporter\"} / node_memory_MemTotal_bytes{job=\"node-exporter\"}) or 100 * (1 - windows_memory_physical_free_bytes{job=\"windows-exporter\"} / windows_memory_physical_total_bytes{job=\"windows-exporter\"}) or 100 * ((memTotalReal{job=\"snmp\"} - memAvailReal{job=\"snmp\"} - memCached{job=\"snmp\"} - memBuffer{job=\"snmp\"}) / memTotalReal{job=\"snmp\"}))", "instant": true, "legendFormat": "最高使用率", "refId": "A" }],
+      "title": "記憶體壓力",
+      "type": "gauge"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "color": { "mode": "thresholds" }, "decimals": 1, "max": 100, "min": 0, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "orange", "value": 70 }, { "color": "red", "value": 85 }] }, "unit": "percent" }, "overrides": [] },
+      "gridPos": { "h": 7, "w": 8, "x": 16, "y": 11 },
+      "id": 11,
+      "options": { "minVizHeight": 75, "minVizWidth": 75, "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "showThresholdLabels": false, "showThresholdMarkers": true },
+      "targets": [{ "expr": "max(100 * (1 - node_filesystem_avail_bytes{job=\"node-exporter\", mountpoint=\"/\", fstype!~\"tmpfs|overlay|squashfs\"} / node_filesystem_size_bytes{job=\"node-exporter\", mountpoint=\"/\", fstype!~\"tmpfs|overlay|squashfs\"}) or 100 * (1 - windows_logical_disk_free_bytes{job=\"windows-exporter\", volume!~\"HarddiskVolume.*|_Total\"} / windows_logical_disk_size_bytes{job=\"windows-exporter\", volume!~\"HarddiskVolume.*|_Total\"}) or 100 * hrStorageUsed{job=\"snmp\", hrStorageDescr=~\"/volume[0-9]+\"} / hrStorageSize{job=\"snmp\", hrStorageDescr=~\"/volume[0-9]+\"})", "instant": true, "legendFormat": "最高使用率", "refId": "A" }],
+      "title": "儲存空間壓力",
+      "type": "gauge"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "color": { "mode": "thresholds" }, "decimals": 1, "max": 100, "min": 0, "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "orange", "value": 95 }, { "color": "green", "value": 99.9 }] }, "unit": "percent" }, "overrides": [] },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 18 },
+      "id": 12,
+      "options": { "displayMode": "gradient", "minVizHeight": 10, "minVizWidth": 0, "orientation": "horizontal", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "showUnfilled": true, "valueMode": "color" },
+      "targets": [
+        { "expr": "100 * avg(probe_success{job=\"blackbox-http\"})", "instant": true, "legendFormat": "網站服務", "refId": "A" },
+        { "expr": "100 * avg(probe_success{job=\"blackbox-tcp\"})", "instant": true, "legendFormat": "連線服務", "refId": "B" },
+        { "expr": "100 * avg(probe_success{job=\"blackbox-icmp\"})", "instant": true, "legendFormat": "網路設備", "refId": "C" }
+      ],
+      "title": "服務類型健康度",
+      "type": "bargauge"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "color": { "mode": "thresholds" }, "decimals": 1, "max": 100, "min": 0, "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "orange", "value": 95 }, { "color": "green", "value": 99.9 }] }, "unit": "percent" }, "overrides": [] },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 18 },
+      "id": 13,
+      "options": { "displayMode": "gradient", "minVizHeight": 10, "minVizWidth": 0, "orientation": "horizontal", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "showUnfilled": true, "valueMode": "color" },
+      "targets": [
+        { "expr": "100 * avg(up{job=\"node-exporter\"})", "instant": true, "legendFormat": "Linux", "refId": "A" },
+        { "expr": "100 * avg(up{job=\"windows-exporter\"})", "instant": true, "legendFormat": "Windows", "refId": "B" },
+        { "expr": "100 * avg(up{job=\"snmp\"})", "instant": true, "legendFormat": "網路與儲存", "refId": "C" },
+        { "expr": "100 * avg(up{job=~\"prometheus|cadvisor\"})", "instant": true, "legendFormat": "監控平台", "refId": "D" }
+      ],
+      "title": "基礎設施健康度",
+      "type": "bargauge"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "color": { "mode": "continuous-GrYlRd" }, "decimals": 2, "max": 100, "min": 0, "unit": "percent" }, "overrides": [] },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 26 },
+      "id": 14,
+      "options": { "legend": { "calcs": ["mean", "min"], "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "single", "sort": "none" } },
+      "targets": [{ "expr": "100 * avg(probe_success)", "legendFormat": "整體服務可用性", "refId": "A" }],
+      "title": "服務可用性趨勢",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "color": { "mode": "continuous-BlYlRd" }, "decimals": 0, "unit": "ms" }, "overrides": [] },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 26 },
+      "id": 15,
+      "options": { "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "single", "sort": "none" } },
+      "targets": [{ "expr": "1000 * quantile(0.95, probe_duration_seconds)", "legendFormat": "服務回應時間 P95", "refId": "A" }],
+      "title": "服務回應時間趨勢",
+      "type": "timeseries"
+    }
+  ],
+  "refresh": "1m",
+  "schemaVersion": 39,
+  "tags": ["monitoring", "public", "status"],
+  "templating": { "list": [] },
+  "time": { "from": "now-24h", "to": "now" },
+  "timezone": "browser",
+  "title": "公開狀態中心",
+  "uid": "public-status-overview",
+  "version": 2
+}
