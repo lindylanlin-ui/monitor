@@ -5,6 +5,8 @@
 目前涵蓋：
 
 - Linux 主機監控
+- 主機 HDD / SSD / NVMe SMART 健康、溫度與 SSD 壽命監控
+- NVIDIA GPU 使用率、溫度、功耗、顯存與錯誤監控（選用 profile）
 - Windows VM 監控
 - Synology NAS 與 ER-X Router 的 SNMP 監控
 - Docker Compose 容器監控
@@ -108,6 +110,8 @@ docker compose up -d prometheus
   - NAS / Router 的 SNMP 指標、容量、磁碟健康、流量尖峰觀察
 - `public-status-overview`
   - 可公開分享的匿名化狀態中心（不顯示主機、服務、IP 或內網細節）
+- `host-hardware-health`
+  - 主機磁碟 SMART、SSD 壽命、硬體感測器、磁碟 I/O 與 NVIDIA GPU 健康
 
 **目前已提供的告警類型**
 - `TargetDown`
@@ -124,6 +128,11 @@ docker compose up -d prometheus
 - `NAS 網路流量異常尖峰`
 - `Router WAN 流量異常尖峰`
 - `Synology 磁碟健康異常`
+- `SmartDiskHealthFailed`
+- `SsdRemainingLifeLow`
+- `DiskTemperatureHigh`
+- `NvmeCriticalWarning`
+- `NvidiaGpuTemperatureHigh`（啟用 GPU profile 後）
 
 告警細節與門檻請直接看 [設定參考手冊](./docs/CONFIG-REFERENCE.md) 與 [Grafana Alerting 規則檔](./grafana/provisioning/alerting/rules.yml)。
 

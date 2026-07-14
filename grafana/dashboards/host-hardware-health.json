@@ -1,0 +1,203 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": { "type": "grafana", "uid": "-- Grafana --" },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": null,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            { "options": { "0": { "color": "red", "text": "異常" }, "1": { "color": "green", "text": "正常" } }, "type": "value" }
+          ],
+          "thresholds": { "mode": "absolute", "steps": [ { "color": "red", "value": null }, { "color": "green", "value": 1 } ] }
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "id": 1,
+      "options": { "showHeader": true },
+      "targets": [
+        { "expr": "smartctl_device_smart_status{job=\"smartctl-exporter\"}", "format": "table", "instant": true, "refId": "A" }
+      ],
+      "title": "主機磁碟 SMART 健康狀態",
+      "transformations": [
+        { "id": "organize", "options": { "excludeByName": { "Time": true, "__name__": true, "job": true, "role": true, "site": true }, "renameByName": { "device": "磁碟", "instance": "主機", "Value": "健康狀態" } } }
+      ],
+      "type": "table"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "max": 100,
+          "min": 0,
+          "thresholds": { "mode": "absolute", "steps": [ { "color": "red", "value": null }, { "color": "yellow", "value": 20 }, { "color": "green", "value": 40 } ] },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "id": 2,
+      "options": { "minVizHeight": 75, "minVizWidth": 75, "orientation": "auto", "reduceOptions": { "calcs": [ "lastNotNull" ], "fields": "", "values": false }, "showThresholdLabels": false, "showThresholdMarkers": true },
+      "targets": [
+        { "expr": "(100 - smartctl_device_percentage_used{job=\"smartctl-exporter\"}) * on (instance, job, exported_device) group_left(model_name) smartctl_device{job=\"smartctl-exporter\"}", "instant": true, "legendFormat": "{{exported_device}} — {{model_name}}", "refId": "A" }
+      ],
+      "title": "NVMe SSD 剩餘壽命",
+      "type": "gauge"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "celsius" }, "overrides": [] },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "id": 3,
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "multi" } },
+      "targets": [
+        { "expr": "smartctl_device_temperature{job=\"smartctl-exporter\"}", "legendFormat": "{{device}} {{temperature_type}}", "refId": "A" }
+      ],
+      "title": "磁碟溫度",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [
+            { "options": { "-1": { "color": "blue", "text": "此 GPU 未提供 XID 指標" } }, "type": "value" }
+          ],
+          "thresholds": { "mode": "absolute", "steps": [ { "color": "green", "value": null }, { "color": "red", "value": 1 } ] }
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "id": 4,
+      "options": { "colorMode": "background", "graphMode": "none", "justifyMode": "center", "orientation": "auto", "reduceOptions": { "calcs": [ "lastNotNull" ], "fields": "", "values": false }, "textMode": "value_and_name" },
+      "targets": [
+        { "expr": "sum(smartctl_device_critical_warning{job=\"smartctl-exporter\"})", "legendFormat": "NVMe critical warning", "refId": "A" },
+        { "expr": "sum(smartctl_device_media_errors{job=\"smartctl-exporter\"})", "legendFormat": "NVMe media errors", "refId": "B" }
+      ],
+      "title": "NVMe 控制器警告與媒體錯誤累計",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "min": 0, "unit": "percent" }, "overrides": [] },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 16 },
+      "id": 5,
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "multi" } },
+      "targets": [
+        { "expr": "rate(node_disk_io_time_seconds_total{job=\"node-exporter\", device!~\"loop.*|ram.*|fd.*|sr.*\"}[5m]) * 100", "legendFormat": "{{instance}} {{device}}", "refId": "A" }
+      ],
+      "title": "實體磁碟忙碌時間",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "max": 100,
+          "min": 0,
+          "thresholds": { "mode": "absolute", "steps": [ { "color": "green", "value": null }, { "color": "yellow", "value": 70 }, { "color": "red", "value": 85 } ] },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 16 },
+      "id": 6,
+      "options": { "minVizHeight": 75, "minVizWidth": 75, "orientation": "auto", "reduceOptions": { "calcs": [ "lastNotNull" ], "fields": "", "values": false }, "showThresholdLabels": false, "showThresholdMarkers": true },
+      "targets": [
+        { "expr": "100 * (1 - node_filesystem_avail_bytes{job=\"node-exporter\", fstype!~\"tmpfs|overlay|squashfs\"} / node_filesystem_size_bytes{job=\"node-exporter\", fstype!~\"tmpfs|overlay|squashfs\"})", "instant": true, "legendFormat": "{{instance}} {{mountpoint}}", "refId": "A" }
+      ],
+      "title": "所有本機檔案系統使用率",
+      "type": "gauge"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "max": 100, "min": 0, "unit": "percent" }, "overrides": [] },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 24 },
+      "id": 7,
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "multi" } },
+      "targets": [
+        { "expr": "DCGM_FI_DEV_GPU_UTIL{job=\"dcgm-exporter\"}", "legendFormat": "GPU {{gpu}}", "refId": "A" },
+        { "expr": "DCGM_FI_DEV_MEM_COPY_UTIL{job=\"dcgm-exporter\"}", "legendFormat": "GPU {{gpu}} 記憶體控制器", "refId": "B" }
+      ],
+      "title": "NVIDIA GPU 使用率",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "celsius" }, "overrides": [ { "matcher": { "id": "byRegexp", "options": ".*power$" }, "properties": [ { "id": "unit", "value": "watt" } ] } ] },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 24 },
+      "id": 8,
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "multi" } },
+      "targets": [
+        { "expr": "DCGM_FI_DEV_GPU_TEMP{job=\"dcgm-exporter\"}", "legendFormat": "GPU {{gpu}} temp", "refId": "A" },
+        { "expr": "DCGM_FI_DEV_POWER_USAGE{job=\"dcgm-exporter\"}", "legendFormat": "GPU {{gpu}} power", "refId": "B" }
+      ],
+      "title": "NVIDIA GPU 溫度與功耗",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "min": 0,
+          "thresholds": { "mode": "absolute", "steps": [ { "color": "green", "value": null }, { "color": "yellow", "value": 8192 }, { "color": "red", "value": 11264 } ] },
+          "unit": "mbytes"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 32 },
+      "id": 9,
+      "options": { "minVizHeight": 75, "minVizWidth": 75, "orientation": "auto", "reduceOptions": { "calcs": [ "lastNotNull" ], "fields": "", "values": false }, "showThresholdLabels": false, "showThresholdMarkers": true },
+      "targets": [
+        { "expr": "DCGM_FI_DEV_FB_USED{job=\"dcgm-exporter\"}", "instant": true, "legendFormat": "GPU {{gpu}}", "refId": "A" }
+      ],
+      "title": "NVIDIA GPU 已用顯示記憶體",
+      "type": "gauge"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "celsius" }, "overrides": [] },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 32 },
+      "id": 11,
+      "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": [ "lastNotNull", "max" ] }, "tooltip": { "mode": "multi" } },
+      "targets": [
+        { "expr": "node_hwmon_temp_celsius{job=\"node-exporter\", chip=\"platform_coretemp_0\"} * on (instance, job, chip, sensor) group_left(label) node_hwmon_sensor_label{job=\"node-exporter\", chip=\"platform_coretemp_0\"}", "legendFormat": "CPU {{label}}", "refId": "A" },
+        { "expr": "node_hwmon_temp_celsius{job=\"node-exporter\", chip=\"nvme_nvme0\", sensor=\"temp1\"} * on (instance, job, chip, sensor) group_left(label) node_hwmon_sensor_label{job=\"node-exporter\", chip=\"nvme_nvme0\", sensor=\"temp1\"}", "legendFormat": "NVMe 0 — {{label}}", "refId": "B" },
+        { "expr": "node_hwmon_temp_celsius{job=\"node-exporter\", chip=\"nvme_nvme1\", sensor=\"temp1\"} * on (instance, job, chip, sensor) group_left(label) node_hwmon_sensor_label{job=\"node-exporter\", chip=\"nvme_nvme1\", sensor=\"temp1\"}", "legendFormat": "NVMe 1 — {{label}}", "refId": "C" }
+      ],
+      "title": "CPU 與 NVMe 溫度",
+      "type": "timeseries"
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 39,
+  "style": "dark",
+  "tags": [ "monitoring", "hardware", "smart", "gpu" ],
+  "templating": { "list": [] },
+  "time": { "from": "now-24h", "to": "now" },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "主機硬體健康",
+  "uid": "host-hardware-health",
+  "version": 1,
+  "weekStart": ""
+}

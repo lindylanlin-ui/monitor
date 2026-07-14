@@ -70,6 +70,10 @@
   - Grafana 管理密碼
 - `DOCKER_ROOT_DIR`
   - 主機上 Docker 真實資料目錄，給 `cAdvisor` 掛載使用
+- `SMARTCTL_EXPORTER_VERSION`
+  - 主機 HDD / SSD / NVMe SMART exporter 映像版本
+- `DCGM_EXPORTER_VERSION`
+  - NVIDIA DCGM Exporter 映像版本；只在 `gpu` profile 啟用時使用
 
 ### `prometheus/prometheus.yml`
 
@@ -137,6 +141,16 @@
   - 最近 `5m` 流量 `> 最近 1h 平均的 3 倍`，且 `> 200 Mbps`，持續 `5m`
 - `Synology 磁碟健康異常`
   - `diskHealthStatus != bool 1`，持續 `10m`
+- `SmartDiskHealthFailed`
+  - `smartctl_device_smart_status < 1`，持續 `10m`
+- `SsdRemainingLifeLow`
+  - SSD 剩餘壽命 `< 20%`，持續 `1h`
+- `DiskTemperatureHigh`
+  - 磁碟溫度 `> 60°C`，持續 `10m`
+- `NvmeCriticalWarning`
+  - NVMe 控制器 critical warning 非零，持續 `10m`
+- `NvidiaGpuTemperatureHigh`
+  - GPU 溫度 `> 83°C`，持續 `10m`；僅在啟用 GPU profile 後有資料
 
 ### `grafana/provisioning/alerting/templates.yml`
 
@@ -244,6 +258,13 @@ global:
 - `blackbox-http`
 - `blackbox-tcp`
 - `blackbox-icmp`
+
+新增的本機硬體 job：
+
+- `smartctl-exporter`
+  - 固定抓取 compose 內的 SMART exporter，提供磁碟整體健康、溫度、NVMe 磨損與控制器告警
+- `dcgm-exporter`
+  - 固定抓取 NVIDIA DCGM Exporter；服務只在 `gpu` profile 啟用，未啟用時 target down 不會觸發一般 `TargetDown` 告警
 
 #### `job_name`
 

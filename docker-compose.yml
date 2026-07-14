@@ -33,6 +33,7 @@ services:
       - cadvisor
       - blackbox-exporter
       - snmp-exporter
+      - smartctl-exporter
     # 掛載設定檔與規則檔，資料本體放到專案內的本機資料夾，
     # 方便你直接在專案目錄下看到與備份，但這些資料夾不會推上 GitHub。
     volumes:
@@ -147,6 +148,44 @@ services:
       - ${DOCKER_ROOT_DIR}:/var/lib/docker:ro
       - /dev/disk:/dev/disk:ro
       - ./logs:/var/log/project
+    networks:
+      - monitoring
+
+  # Smartctl Exporter 讀取宿主機 HDD、SSD 與 NVMe 的 SMART 資訊。
+  # 這包含整體健康狀態、溫度、NVMe 剩餘備援空間、磨損與媒體錯誤。
+  # smartctl 需要以 root 權限向磁碟裝置發送查詢，因此僅提供唯讀監控用途。
+  smartctl-exporter:
+    image: prometheuscommunity/smartctl-exporter:${SMARTCTL_EXPORTER_VERSION}
+    container_name: monitoring-smartctl-exporter
+    restart: unless-stopped
+    privileged: true
+    user: root
+    logging:
+      driver: none
+    volumes:
+      - /dev:/dev
+      - /run/udev:/run/udev:ro
+    networks:
+      - monitoring
+
+  # NVIDIA GPU 監控採用官方 DCGM Exporter。
+  # GPU 驅動與 NVIDIA Container Toolkit 必須先可正常執行 nvidia-smi，
+  # 因此以 gpu profile 隔離，不影響沒有相容 GPU 的部署。
+  # 啟用方式請見 docs/SETUP-GUIDE.md。
+  dcgm-exporter:
+    image: nvcr.io/nvidia/k8s/dcgm-exporter:${DCGM_EXPORTER_VERSION}
+    container_name: monitoring-dcgm-exporter
+    profiles:
+      - gpu
+    restart: unless-stopped
+    # 此主機的 NVIDIA Container Toolkit 使用 CDI 模式；顯式選用 nvidia
+    # runtime 可避免 Compose 的 gpus: all 直接呼叫 NVIDIA hook 而啟動失敗。
+    runtime: nvidia
+    environment:
+      NVIDIA_VISIBLE_DEVICES: all
+      NVIDIA_DRIVER_CAPABILITIES: compute,utility
+    logging:
+      driver: none
     networks:
       - monitoring
 

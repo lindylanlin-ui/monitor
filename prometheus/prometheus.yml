@@ -73,6 +73,35 @@ scrape_configs:
         regex: (.+)
         target_label: instance
 
+  # 監控宿主機 HDD、SSD 與 NVMe 的 SMART 健康、溫度與磨損資訊。
+  - job_name: smartctl-exporter
+    static_configs:
+      - targets:
+          - smartctl-exporter:9633
+        labels:
+          device: zorin-linux-host
+          role: linux-host-storage
+          site: local
+    relabel_configs:
+      - source_labels: [device]
+        regex: (.+)
+        target_label: instance
+
+  # NVIDIA GPU 指標。DCGM Exporter 僅會在 gpu profile 啟用後提供資料，
+  # 未啟用 profile 時此 target 顯示為 down，但不會觸發一般 TargetDown 告警。
+  - job_name: dcgm-exporter
+    static_configs:
+      - targets:
+          - dcgm-exporter:9400
+        labels:
+          device: zorin-linux-host
+          role: nvidia-gpu
+          site: local
+    relabel_configs:
+      - source_labels: [device]
+        regex: (.+)
+        target_label: instance
+
   # 監控 HTTP 服務可用性，例如網站、NAS 管理頁、API。
   - job_name: blackbox-http
     metrics_path: /probe

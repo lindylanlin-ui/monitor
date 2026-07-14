@@ -146,6 +146,26 @@ TP-Link Deco X20 這類家用 AP 若沒有提供 SNMP，建議至少先做 ICMP 
 2. 在 `Router Port` 變數選擇 X20 接到的那個 `ER-X` 介面
 3. 觀察 `ER-X AP Uplink 流量` 面板
 
+### 3.4 主機磁碟 SMART 與 NVIDIA GPU
+
+`smartctl-exporter` 預設會隨平台啟動，直接讀取宿主機的 `/dev` 與 udev 資訊，監控 HDD、SATA SSD 與 NVMe 的 SMART 健康、溫度與支援的壽命欄位。啟動後，在 Prometheus Targets 確認 `smartctl-exporter` 是 `UP`，再開啟 Grafana 的「主機硬體健康」。
+
+NVIDIA GPU 監控使用官方 DCGM Exporter，因為它必須使用宿主機 NVIDIA 驅動與 NVIDIA Container Toolkit，所以預設不啟動。啟用前，先在宿主機確認：
+
+```bash
+nvidia-smi
+```
+
+必須能正常列出 GPU；若此命令失敗，先修復 NVIDIA 驅動或完成重開機，否則 DCGM Exporter 無法取得資料。接著依 [NVIDIA Container Toolkit 官方安裝文件](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html) 安裝並設定 NVIDIA Container Toolkit，然後啟動 GPU profile：
+
+```bash
+docker compose --profile gpu up -d dcgm-exporter
+```
+
+啟動後確認 Prometheus 的 `dcgm-exporter` target 為 `UP`。未啟用 profile 時，GPU 面板的 `No data` 為預期行為，且不會觸發一般 target down 告警。
+
+本專案會顯式指定 Docker 的 `nvidia` runtime，而非使用 `gpus: all`。這可相容於使用 CDI 模式的 NVIDIA Container Toolkit；Docker 必須先列出名為 `nvidia` 的 runtime。
+
 ## 4. 驗證與啟動
 
 ### 步驟 1：驗證語法

@@ -11,6 +11,10 @@
 #    docker compose up -d --force-recreate grafana
 apiVersion: 1
 
+deleteRules:
+  - orgId: 1
+    uid: nvidia_gpu_xid_error
+
 groups:
   - orgId: 1
     name: availability
@@ -31,7 +35,7 @@ groups:
                 type: prometheus
                 uid: prometheus
               editorMode: code
-              expr: max by (instance, job) (up{job=~"node-exporter|windows-exporter|cadvisor|snmp"})
+              expr: max by (instance, job) (up{job=~"node-exporter|windows-exporter|cadvisor|snmp|smartctl-exporter"})
               instant: true
               intervalMs: 1000
               maxDataPoints: 43200
@@ -607,6 +611,331 @@ groups:
         notification_settings:
           receiver: telegram-monitoring
           group_by: [alertname, grafana_folder, instance]
+          group_wait: 30s
+          group_interval: 5m
+          repeat_interval: 4h
+
+  - orgId: 1
+    name: host-hardware-health
+    folder: Infrastructure Alerts
+    interval: 1m
+    rules:
+      - uid: smart_disk_health_failed
+        title: SmartDiskHealthFailed
+        condition: B
+        data:
+          - refId: A
+            datasourceUid: prometheus
+            relativeTimeRange:
+              from: 600
+              to: 0
+            model:
+              datasource:
+                type: prometheus
+                uid: prometheus
+              editorMode: code
+              expr: smartctl_device_smart_status{job="smartctl-exporter"}
+              instant: true
+              intervalMs: 1000
+              maxDataPoints: 43200
+              range: false
+              refId: A
+          - refId: B
+            datasourceUid: __expr__
+            relativeTimeRange:
+              from: 0
+              to: 0
+            model:
+              conditions:
+                - evaluator:
+                    params: [1]
+                    type: lt
+                  operator:
+                    type: and
+                  query:
+                    params: [A]
+                  reducer:
+                    params: []
+                    type: last
+                  type: query
+              datasource:
+                type: __expr__
+                uid: __expr__
+              expression: A
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: B
+              type: classic_conditions
+        dashboardUid: host-hardware-health
+        panelId: 1
+        noDataState: OK
+        executionErrorState: Error
+        for: 10m
+        annotations:
+          summary: "{{ range $k, $v := $values }}{{ if (match \"B[0-9]+\" $k) }}{{ if index $v.Labels \"device\" }}{{ index $v.Labels \"device\" }}{{ else }}主機磁碟{{ end }} SMART 健康狀態異常{{ end }}{{ end }}"
+          description: "{{ range $k, $v := $values }}{{ if (match \"B[0-9]+\" $k) }}{{ if index $v.Labels \"device\" }}磁碟 {{ index $v.Labels \"device\" }}{{ else }}主機磁碟{{ end }} 已連續 10 分鐘回報 SMART 測試失敗。{{ end }}{{ end }}"
+        labels:
+          severity: critical
+        isPaused: false
+        notification_settings:
+          receiver: telegram-monitoring
+          group_by: [alertname, grafana_folder, instance, device]
+          group_wait: 30s
+          group_interval: 5m
+          repeat_interval: 4h
+
+      - uid: ssd_remaining_life_low
+        title: SsdRemainingLifeLow
+        condition: B
+        data:
+          - refId: A
+            datasourceUid: prometheus
+            relativeTimeRange:
+              from: 3600
+              to: 0
+            model:
+              datasource:
+                type: prometheus
+                uid: prometheus
+              editorMode: code
+              expr: 100 - smartctl_device_percentage_used{job="smartctl-exporter"}
+              instant: true
+              intervalMs: 1000
+              maxDataPoints: 43200
+              range: false
+              refId: A
+          - refId: B
+            datasourceUid: __expr__
+            relativeTimeRange:
+              from: 0
+              to: 0
+            model:
+              conditions:
+                - evaluator:
+                    params: [20]
+                    type: lt
+                  operator:
+                    type: and
+                  query:
+                    params: [A]
+                  reducer:
+                    params: []
+                    type: last
+                  type: query
+              datasource:
+                type: __expr__
+                uid: __expr__
+              expression: A
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: B
+              type: classic_conditions
+        dashboardUid: host-hardware-health
+        panelId: 2
+        noDataState: OK
+        executionErrorState: Error
+        for: 1h
+        annotations:
+          summary: "{{ range $k, $v := $values }}{{ if (match \"B[0-9]+\" $k) }}{{ if index $v.Labels \"device\" }}{{ index $v.Labels \"device\" }}{{ else }}SSD{{ end }} 剩餘壽命低於 20%{{ end }}{{ end }}"
+          description: "SSD 回報的剩餘壽命已持續 1 小時低於 20%，請安排更換並確認備份可還原。"
+        labels:
+          severity: warning
+        isPaused: false
+        notification_settings:
+          receiver: telegram-monitoring
+          group_by: [alertname, grafana_folder, instance, device]
+          group_wait: 30s
+          group_interval: 5m
+          repeat_interval: 12h
+
+      - uid: disk_temperature_high
+        title: DiskTemperatureHigh
+        condition: B
+        data:
+          - refId: A
+            datasourceUid: prometheus
+            relativeTimeRange:
+              from: 600
+              to: 0
+            model:
+              datasource:
+                type: prometheus
+                uid: prometheus
+              editorMode: code
+              expr: max by (instance, device) (smartctl_device_temperature{job="smartctl-exporter"})
+              instant: true
+              intervalMs: 1000
+              maxDataPoints: 43200
+              range: false
+              refId: A
+          - refId: B
+            datasourceUid: __expr__
+            relativeTimeRange:
+              from: 0
+              to: 0
+            model:
+              conditions:
+                - evaluator:
+                    params: [60]
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params: [A]
+                  reducer:
+                    params: []
+                    type: last
+                  type: query
+              datasource:
+                type: __expr__
+                uid: __expr__
+              expression: A
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: B
+              type: classic_conditions
+        dashboardUid: host-hardware-health
+        panelId: 3
+        noDataState: OK
+        executionErrorState: Error
+        for: 10m
+        annotations:
+          summary: "{{ range $k, $v := $values }}{{ if (match \"B[0-9]+\" $k) }}{{ if index $v.Labels \"device\" }}{{ index $v.Labels \"device\" }}{{ else }}主機磁碟{{ end }} 溫度過高{{ end }}{{ end }}"
+          description: "磁碟溫度持續 10 分鐘高於 60°C，請檢查散熱、風扇與磁碟負載。"
+        labels:
+          severity: warning
+        isPaused: false
+        notification_settings:
+          receiver: telegram-monitoring
+          group_by: [alertname, grafana_folder, instance, device]
+          group_wait: 30s
+          group_interval: 5m
+          repeat_interval: 4h
+
+      - uid: nvme_critical_warning
+        title: NvmeCriticalWarning
+        condition: B
+        data:
+          - refId: A
+            datasourceUid: prometheus
+            relativeTimeRange:
+              from: 600
+              to: 0
+            model:
+              datasource:
+                type: prometheus
+                uid: prometheus
+              editorMode: code
+              expr: smartctl_device_critical_warning{job="smartctl-exporter"}
+              instant: true
+              intervalMs: 1000
+              maxDataPoints: 43200
+              range: false
+              refId: A
+          - refId: B
+            datasourceUid: __expr__
+            relativeTimeRange:
+              from: 0
+              to: 0
+            model:
+              conditions:
+                - evaluator:
+                    params: [0]
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params: [A]
+                  reducer:
+                    params: []
+                    type: last
+                  type: query
+              datasource:
+                type: __expr__
+                uid: __expr__
+              expression: A
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: B
+              type: classic_conditions
+        dashboardUid: host-hardware-health
+        panelId: 4
+        noDataState: OK
+        executionErrorState: Error
+        for: 10m
+        annotations:
+          summary: "{{ range $k, $v := $values }}{{ if (match \"B[0-9]+\" $k) }}{{ if index $v.Labels \"device\" }}{{ index $v.Labels \"device\" }}{{ else }}NVMe SSD{{ end }} 回報控制器 critical warning{{ end }}{{ end }}"
+          description: "NVMe 控制器持續 10 分鐘回報 critical warning，請立即檢查 SMART 與備份狀態。"
+        labels:
+          severity: critical
+        isPaused: false
+        notification_settings:
+          receiver: telegram-monitoring
+          group_by: [alertname, grafana_folder, instance, device]
+          group_wait: 30s
+          group_interval: 5m
+          repeat_interval: 4h
+
+      - uid: nvidia_gpu_temperature_high
+        title: NvidiaGpuTemperatureHigh
+        condition: B
+        data:
+          - refId: A
+            datasourceUid: prometheus
+            relativeTimeRange:
+              from: 600
+              to: 0
+            model:
+              datasource:
+                type: prometheus
+                uid: prometheus
+              editorMode: code
+              expr: DCGM_FI_DEV_GPU_TEMP{job="dcgm-exporter"}
+              instant: true
+              intervalMs: 1000
+              maxDataPoints: 43200
+              range: false
+              refId: A
+          - refId: B
+            datasourceUid: __expr__
+            relativeTimeRange:
+              from: 0
+              to: 0
+            model:
+              conditions:
+                - evaluator:
+                    params: [83]
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params: [A]
+                  reducer:
+                    params: []
+                    type: last
+                  type: query
+              datasource:
+                type: __expr__
+                uid: __expr__
+              expression: A
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: B
+              type: classic_conditions
+        dashboardUid: host-hardware-health
+        panelId: 8
+        noDataState: OK
+        executionErrorState: Error
+        for: 10m
+        annotations:
+          summary: "{{ range $k, $v := $values }}{{ if (match \"B[0-9]+\" $k) }}NVIDIA GPU {{ if index $v.Labels \"gpu\" }}{{ index $v.Labels \"gpu\" }}{{ else }}unknown{{ end }} 溫度過高{{ end }}{{ end }}"
+          description: "NVIDIA GPU 溫度持續 10 分鐘高於 83°C，請檢查散熱與工作負載。"
+        labels:
+          severity: warning
+        isPaused: false
+        notification_settings:
+          receiver: telegram-monitoring
+          group_by: [alertname, grafana_folder, instance, gpu]
           group_wait: 30s
           group_interval: 5m
           repeat_interval: 4h
