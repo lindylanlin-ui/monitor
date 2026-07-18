@@ -68,25 +68,6 @@
       },
       "fieldConfig": {
         "defaults": {
-          "max": 100,
-          "min": 0,
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "yellow",
-                "value": 70
-              },
-              {
-                "color": "red",
-                "value": 85
-              }
-            ]
-          },
           "unit": "percent"
         },
         "overrides": []
@@ -99,29 +80,23 @@
       },
       "id": 2,
       "options": {
-        "minVizHeight": 75,
-        "minVizWidth": 75,
-        "orientation": "auto",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
         },
-        "showThresholdLabels": false,
-        "showThresholdMarkers": true
+        "tooltip": {
+          "mode": "single"
+        }
       },
       "targets": [
         {
           "expr": "100 * sum by (container_label_com_docker_compose_service) (rate(container_cpu_usage_seconds_total{job=\"cadvisor\", container_label_com_docker_compose_project=~\"$compose_project\", image!=\"\"}[5m]))",
-          "instant": true,
           "legendFormat": "{{container_label_com_docker_compose_service}}",
           "refId": "A"
         }
       ],
       "title": "容器 CPU 使用率",
-      "type": "gauge"
+      "type": "timeseries"
     },
     {
       "datasource": {
@@ -142,29 +117,23 @@
       },
       "id": 3,
       "options": {
-        "minVizHeight": 75,
-        "minVizWidth": 75,
-        "orientation": "auto",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
         },
-        "showThresholdLabels": false,
-        "showThresholdMarkers": false
+        "tooltip": {
+          "mode": "single"
+        }
       },
       "targets": [
         {
           "expr": "sum by (container_label_com_docker_compose_service) (container_memory_working_set_bytes{job=\"cadvisor\", container_label_com_docker_compose_project=~\"$compose_project\", image!=\"\"})",
-          "instant": true,
           "legendFormat": "{{container_label_com_docker_compose_service}}",
           "refId": "A"
         }
       ],
       "title": "容器記憶體使用量",
-      "type": "gauge"
+      "type": "timeseries"
     },
     {
       "datasource": {

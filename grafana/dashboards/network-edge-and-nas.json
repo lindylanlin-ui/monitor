@@ -26,25 +26,6 @@
       },
       "fieldConfig": {
         "defaults": {
-          "max": 100,
-          "min": 0,
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "yellow",
-                "value": 70
-              },
-              {
-                "color": "red",
-                "value": 85
-              }
-            ]
-          },
           "unit": "percent"
         },
         "overrides": []
@@ -57,29 +38,23 @@
       },
       "id": 1,
       "options": {
-        "minVizHeight": 75,
-        "minVizWidth": 75,
-        "orientation": "auto",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
         },
-        "showThresholdLabels": false,
-        "showThresholdMarkers": true
+        "tooltip": {
+          "mode": "single"
+        }
       },
       "targets": [
         {
           "expr": "avg by (instance) (hrProcessorLoad{job=\"snmp\", instance=~\"$device\"})",
-          "instant": true,
           "legendFormat": "{{instance}}",
           "refId": "A"
         }
       ],
       "title": "SNMP CPU 負載",
-      "type": "gauge"
+      "type": "timeseries"
     },
     {
       "datasource": {
@@ -88,25 +63,6 @@
       },
       "fieldConfig": {
         "defaults": {
-          "max": 100,
-          "min": 0,
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "yellow",
-                "value": 70
-              },
-              {
-                "color": "red",
-                "value": 85
-              }
-            ]
-          },
           "unit": "percent"
         },
         "overrides": []
@@ -119,29 +75,23 @@
       },
       "id": 2,
       "options": {
-        "minVizHeight": 75,
-        "minVizWidth": 75,
-        "orientation": "auto",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
         },
-        "showThresholdLabels": false,
-        "showThresholdMarkers": true
+        "tooltip": {
+          "mode": "single"
+        }
       },
       "targets": [
         {
           "expr": "100 * ((memTotalReal{job=\"snmp\", instance=~\"$device\"} - memAvailReal{job=\"snmp\", instance=~\"$device\"} - memCached{job=\"snmp\", instance=~\"$device\"} - memBuffer{job=\"snmp\", instance=~\"$device\"}) / memTotalReal{job=\"snmp\", instance=~\"$device\"})",
-          "instant": true,
           "legendFormat": "{{instance}}",
           "refId": "A"
         }
       ],
       "title": "SNMP 記憶體使用率",
-      "type": "gauge"
+      "type": "timeseries"
     },
     {
       "datasource": {

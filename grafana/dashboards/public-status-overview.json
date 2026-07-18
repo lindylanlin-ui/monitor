@@ -1,6 +1,6 @@
 {
   "annotations": { "list": [] },
-  "description": "供公開分享的匿名狀態中心；只顯示彙總健康度、資源壓力與趨勢，不揭露主機、服務、IP、URL、容器或網路拓撲。",
+  "description": "供公開分享的匿名狀態中心；只顯示彙總健康度、Linux 主機資源使用率與服務狀態，不揭露主機、服務、IP、URL、容器或網路拓撲。",
   "editable": true,
   "links": [],
   "panels": [
@@ -49,13 +49,15 @@
       },
       "gridPos": { "h": 6, "w": 6, "x": 12, "y": 0 },
       "id": 3,
+      "description": "目前有 95% 的受監測服務可在此時間內完成回應。",
       "options": { "colorMode": "background", "graphMode": "area", "justifyMode": "center", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "textMode": "value_and_name", "wideLayout": true },
-      "targets": [{ "expr": "1000 * quantile(0.95, probe_duration_seconds)", "legendFormat": "目前 P95", "refId": "A" }],
+      "targets": [{ "expr": "1000 * quantile(0.95, probe_duration_seconds)", "legendFormat": "95% 服務回應時間", "refId": "A" }],
       "title": "服務回應時間",
       "type": "stat"
     },
     {
       "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "description": "所有 Linux 主機中最高的 CPU 使用率。",
       "fieldConfig": {
         "defaults": {
           "color": { "mode": "thresholds" }, "decimals": 0,
@@ -121,29 +123,32 @@
       "fieldConfig": { "defaults": { "color": { "mode": "thresholds" }, "decimals": 1, "max": 100, "min": 0, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "orange", "value": 70 }, { "color": "red", "value": 85 }] }, "unit": "percent" }, "overrides": [] },
       "gridPos": { "h": 7, "w": 8, "x": 0, "y": 11 },
       "id": 9,
+      "description": "所有 Linux 主機中最高的 CPU 使用率。",
       "options": { "minVizHeight": 75, "minVizWidth": 75, "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "showThresholdLabels": false, "showThresholdMarkers": true },
-      "targets": [{ "expr": "max(100 * (1 - avg by (instance) (rate(node_cpu_seconds_total{job=\"node-exporter\", mode=\"idle\"}[5m]))) or 100 * (1 - avg by (instance) (rate(windows_cpu_time_total{job=\"windows-exporter\", mode=\"idle\"}[5m]))) or avg by (instance) (hrProcessorLoad{job=\"snmp\"}))", "instant": true, "legendFormat": "最高使用率", "refId": "A" }],
-      "title": "CPU 壓力",
+      "targets": [{ "expr": "max(100 * (1 - avg by (instance) (rate(node_cpu_seconds_total{job=\"node-exporter\", mode=\"idle\"}[5m]))))", "instant": true, "legendFormat": "Linux 主機最高使用率", "refId": "A" }],
+      "title": "CPU 使用率",
       "type": "gauge"
     },
     {
       "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "description": "所有 Linux 主機中最高的記憶體使用率。",
       "fieldConfig": { "defaults": { "color": { "mode": "thresholds" }, "decimals": 1, "max": 100, "min": 0, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "orange", "value": 70 }, { "color": "red", "value": 85 }] }, "unit": "percent" }, "overrides": [] },
       "gridPos": { "h": 7, "w": 8, "x": 8, "y": 11 },
       "id": 10,
       "options": { "minVizHeight": 75, "minVizWidth": 75, "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "showThresholdLabels": false, "showThresholdMarkers": true },
-      "targets": [{ "expr": "max(100 * (1 - node_memory_MemAvailable_bytes{job=\"node-exporter\"} / node_memory_MemTotal_bytes{job=\"node-exporter\"}) or 100 * (1 - windows_memory_physical_free_bytes{job=\"windows-exporter\"} / windows_memory_physical_total_bytes{job=\"windows-exporter\"}) or 100 * ((memTotalReal{job=\"snmp\"} - memAvailReal{job=\"snmp\"} - memCached{job=\"snmp\"} - memBuffer{job=\"snmp\"}) / memTotalReal{job=\"snmp\"}))", "instant": true, "legendFormat": "最高使用率", "refId": "A" }],
-      "title": "記憶體壓力",
+      "targets": [{ "expr": "max(100 * (1 - node_memory_MemAvailable_bytes{job=\"node-exporter\"} / node_memory_MemTotal_bytes{job=\"node-exporter\"}))", "instant": true, "legendFormat": "Linux 主機最高使用率", "refId": "A" }],
+      "title": "記憶體使用率",
       "type": "gauge"
     },
     {
       "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "description": "所有 Linux 主機根目錄中最高的儲存空間使用率。",
       "fieldConfig": { "defaults": { "color": { "mode": "thresholds" }, "decimals": 1, "max": 100, "min": 0, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "orange", "value": 70 }, { "color": "red", "value": 85 }] }, "unit": "percent" }, "overrides": [] },
       "gridPos": { "h": 7, "w": 8, "x": 16, "y": 11 },
       "id": 11,
       "options": { "minVizHeight": 75, "minVizWidth": 75, "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "showThresholdLabels": false, "showThresholdMarkers": true },
-      "targets": [{ "expr": "max(100 * (1 - node_filesystem_avail_bytes{job=\"node-exporter\", mountpoint=\"/\", fstype!~\"tmpfs|overlay|squashfs\"} / node_filesystem_size_bytes{job=\"node-exporter\", mountpoint=\"/\", fstype!~\"tmpfs|overlay|squashfs\"}) or 100 * (1 - windows_logical_disk_free_bytes{job=\"windows-exporter\", volume!~\"HarddiskVolume.*|_Total\"} / windows_logical_disk_size_bytes{job=\"windows-exporter\", volume!~\"HarddiskVolume.*|_Total\"}) or 100 * hrStorageUsed{job=\"snmp\", hrStorageDescr=~\"/volume[0-9]+\"} / hrStorageSize{job=\"snmp\", hrStorageDescr=~\"/volume[0-9]+\"})", "instant": true, "legendFormat": "最高使用率", "refId": "A" }],
-      "title": "儲存空間壓力",
+      "targets": [{ "expr": "max(100 * (1 - node_filesystem_avail_bytes{job=\"node-exporter\", mountpoint=\"/\", fstype!~\"tmpfs|overlay|squashfs\"} / node_filesystem_size_bytes{job=\"node-exporter\", mountpoint=\"/\", fstype!~\"tmpfs|overlay|squashfs\"}))", "instant": true, "legendFormat": "Linux 主機最高使用率", "refId": "A" }],
+      "title": "儲存空間使用率",
       "type": "gauge"
     },
     {
@@ -181,18 +186,19 @@
       "gridPos": { "h": 8, "w": 12, "x": 0, "y": 26 },
       "id": 14,
       "options": { "legend": { "calcs": ["mean", "min"], "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "single", "sort": "none" } },
-      "targets": [{ "expr": "100 * avg(probe_success)", "legendFormat": "整體服務可用性", "refId": "A" }],
-      "title": "服務可用性趨勢",
+      "targets": [{ "expr": "100 * avg(probe_success)", "legendFormat": "服務可用性", "refId": "A" }],
+      "title": "服務可用性",
       "type": "timeseries"
     },
     {
       "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "description": "顯示各時間點有 95% 的受監測服務可在此時間內完成回應。",
       "fieldConfig": { "defaults": { "color": { "mode": "continuous-BlYlRd" }, "decimals": 0, "unit": "ms" }, "overrides": [] },
       "gridPos": { "h": 8, "w": 12, "x": 12, "y": 26 },
       "id": 15,
       "options": { "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "single", "sort": "none" } },
-      "targets": [{ "expr": "1000 * quantile(0.95, probe_duration_seconds)", "legendFormat": "服務回應時間 P95", "refId": "A" }],
-      "title": "服務回應時間趨勢",
+      "targets": [{ "expr": "1000 * quantile(0.95, probe_duration_seconds)", "legendFormat": "95% 服務回應時間", "refId": "A" }],
+      "title": "服務回應狀態",
       "type": "timeseries"
     }
   ],
