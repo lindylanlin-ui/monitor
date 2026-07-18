@@ -78,8 +78,9 @@ services:
       - ./grafana/provisioning:/etc/grafana/provisioning-src:ro
       - ./grafana/runtime:/etc/grafana/provisioning
       - ./grafana/templates:/etc/grafana/templates:ro
-      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+      # 先掛載 Grafana 資料目錄，再掛載其 dashboards 子目錄；反過來會讓父目錄覆蓋 JSON dashboard 掛載。
       - ./grafana/data:/var/lib/grafana
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
       - ./logs:/var/log/project
       # Grafana Alerting 的 Telegram secrets 放在 secrets/grafana-alerting。
       - ./secrets:/etc/grafana/secrets:ro
@@ -103,6 +104,7 @@ services:
         --path.rootfs=/host
         --path.procfs=/host/proc
         --path.sysfs=/host/sys
+        --collector.textfile.directory=/var/lib/node_exporter/textfile
         '--collector.filesystem.mount-points-exclude=^/(dev|proc|sys|run/credentials/.+|var/lib/docker/.+)($|/)'
         '--collector.filesystem.fs-types-exclude=^(autofs|binfmt_misc|bpf|cgroup2?|configfs|debugfs|devpts|devtmpfs|fusectl|mqueue|nsfs|overlay|proc|pstore|securityfs|selinuxfs|squashfs|sysfs|tracefs)$'
         >> /var/log/project/node-exporter.log 2>&1
@@ -112,6 +114,9 @@ services:
       # 某些 Linux 發行版的根掛載不是 shared/slave，rslave 會導致容器無法啟動。
       # 這裡改成一般唯讀掛載即可滿足 node-exporter 的主機檔案系統讀取需求。
       - /:/host:ro
+      # 主機端的 systemd timer 會把 Fail2ban 等自訂 metric 寫到此目錄；
+      # node_exporter 僅以唯讀方式讀取，避免容器意外修改主機端輸出。
+      - ./node-exporter/textfile:/var/lib/node_exporter/textfile:ro
       - ./logs:/var/log/project
     networks:
       - monitoring

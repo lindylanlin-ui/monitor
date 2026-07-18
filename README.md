@@ -32,6 +32,12 @@
   - `No data`、target down、Telegram 告警異常查修
 - [Grafana Dashboard 說明](./docs/DASHBOARDS.md)
   - 各 dashboard 與面板用途
+- [Grafana 告警維護指南](./docs/ALERTS.md)
+  - 告警名稱、門檻、通知與套用方式
+- [網站服務監控維護指南](./docs/WEBSITE-SERVICE-MONITORING.md)
+  - 新增網站服務、建立面板、告警與驗證流程
+- [Fail2ban 安全監控維護指南](./docs/FAIL2BAN-MONITORING.md)
+  - Fail2ban、SSH 與 Nginx 登入失敗的 metrics、面板與擴充方式
 
 **快速開始**
 1. 建立本機設定檔與資料夾：
@@ -81,6 +87,8 @@ make ps
   - 看 [詳細建置指南](./docs/SETUP-GUIDE.md)
 - 想新增 dashboard 或調整圖表：
   - 看 [Grafana Dashboard 說明](./docs/DASHBOARDS.md)
+- 想維護公開網站服務監控：
+  - 看 [網站服務監控維護指南](./docs/WEBSITE-SERVICE-MONITORING.md)
 - 想新增 PromQL、監控指標或告警規則：
   - 看 [擴充與告警設計指南](./docs/EXTENDING.md)
 - 想查某個設定欄位代表什麼：
@@ -110,8 +118,12 @@ docker compose up -d prometheus
   - NAS / Router 的 SNMP 指標、容量、磁碟健康、流量尖峰觀察
 - `public-status-overview`
   - 可公開分享的匿名化狀態中心（不顯示主機、服務、IP 或內網細節）
+- `website-service-overview`
+  - 公開網站服務的可用性、回應時間與 TLS 憑證監控
 - `host-hardware-health`
   - 主機磁碟 SMART、SSD 壽命、硬體感測器、磁碟 I/O 與 NVIDIA GPU 健康
+- `fail2ban-security-overview`
+  - Fail2ban jail 封鎖趨勢、SSH 與 `/file/` 登入失敗摘要（僅限內部使用）
 
 **目前已提供的告警類型**
 - `TargetDown`

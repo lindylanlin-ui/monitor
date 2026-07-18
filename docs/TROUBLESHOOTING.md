@@ -161,6 +161,45 @@ Grafana dashboard JSON 在：
 - [grafana/dashboards/infrastructure-overview.json](../grafana/dashboards/infrastructure-overview.json)
 - [grafana/dashboards/docker-compose-overview.json](../grafana/dashboards/docker-compose-overview.json)
 - [grafana/dashboards/network-edge-and-nas.json](../grafana/dashboards/network-edge-and-nas.json)
+- [grafana/dashboards/website-service-overview.json](../grafana/dashboards/website-service-overview.json)
+
+### 新增 dashboard 沒有出現
+
+1. 確認 JSON 格式有效：
+
+   ```bash
+   jq empty grafana/dashboards/*.json
+   ```
+
+2. 確認 dashboard JSON 可由 Grafana 容器使用者讀取；建議檔案權限為 `0644`：
+
+   ```bash
+   chmod 0644 grafana/dashboards/*.json
+   ```
+
+3. 確認 `docker-compose.yml` 先掛載 `./grafana/data:/var/lib/grafana`，再掛載 `./grafana/dashboards:/var/lib/grafana/dashboards:ro`。子目錄掛載若排在前面，會被父目錄覆蓋。
+4. 限定重建 Grafana，讓它重新讀取 dashboard provisioning：
+
+   ```bash
+   docker compose up -d --force-recreate grafana
+   ```
+
+### 網站服務監控顯示 `No data`
+
+1. 確認本機 target 檔存在且 Prometheus 容器可讀：
+
+   ```bash
+   chmod 0644 prometheus/file_sd/http-services.local.yml
+   docker compose exec -T prometheus test -r /etc/prometheus/file_sd/http-services.local.yml
+   ```
+
+2. 重新載入 Prometheus 設定，避免等待下一次完整設定重載：
+
+   ```bash
+   curl -fsS -X POST http://127.0.0.1:9090/-/reload
+   ```
+
+3. 在 Prometheus 查詢 `probe_success{job="blackbox-http",role="public-web"}`。有資料後，等待最多一個 `30s` scrape interval 再重新整理 Grafana。
 
 如果你想知道面板用途，可看：
 

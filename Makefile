@@ -8,7 +8,8 @@ bootstrap:
 	@if [ ! -f prometheus/file_sd/windows-hosts.local.yml ]; then printf '[]\n' > prometheus/file_sd/windows-hosts.local.yml; fi
 	@if [ ! -f prometheus/file_sd/snmp-devices.local.yml ]; then printf '[]\n' > prometheus/file_sd/snmp-devices.local.yml; fi
 	@if [ ! -f prometheus/file_sd/icmp-services.local.yml ]; then printf '[]\n' > prometheus/file_sd/icmp-services.local.yml; fi
-	@mkdir -p prometheus/data grafana/data grafana/runtime snmp/generated
+	@if [ ! -f prometheus/file_sd/http-services.local.yml ]; then printf '[]\n' > prometheus/file_sd/http-services.local.yml; fi
+	@mkdir -p prometheus/data grafana/data grafana/runtime snmp/generated node-exporter/textfile
 	@chmod 0777 grafana/runtime
 	@mkdir -p secrets/grafana-alerting
 	@if [ ! -f secrets/grafana-alerting/telegram_bot_token ]; then printf 'replace-me-with-your-telegram-bot-token\n' > secrets/grafana-alerting/telegram_bot_token; fi

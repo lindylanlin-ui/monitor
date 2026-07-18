@@ -1,0 +1,12 @@
+[Unit]
+Description=每分鐘更新 Fail2ban Prometheus metrics
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=1min
+RandomizedDelaySec=15s
+Persistent=true
+Unit=fail2ban-metrics-collector.service
+
+[Install]
+WantedBy=timers.target

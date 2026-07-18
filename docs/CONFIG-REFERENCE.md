@@ -14,6 +14,8 @@
 - `Prometheus` 只負責抓 metrics
 - `Grafana Alerting` 負責告警規則與 Telegram 通知
 
+調整 Grafana 顯示名稱、門檻、通知與套用方式，請看 [ALERTS.md](./ALERTS.md)。
+
 ## 1. 設定檔總覽
 
 ### `docker-compose.yml`
@@ -41,6 +43,8 @@
 - `./grafana/data:/var/lib/grafana`
 - `./grafana/runtime:/etc/grafana/provisioning`
 - `./snmp/generated:/etc/snmp_exporter`
+
+Grafana 另外把 `./grafana/dashboards` 掛載到 `/var/lib/grafana/dashboards`。因為它是 `grafana/data` 的子目錄，`docker-compose.yml` 必須先掛載 `grafana/data`、再掛載 `grafana/dashboards`；順序反過來會讓父目錄覆蓋 dashboard JSON，新增 dashboard 不會出現在 Grafana。
 
 意思是：
 
@@ -117,6 +121,10 @@
   - `up < 1`，持續 `2m`
 - `ServiceProbeFailed`
   - `probe_success < 1`，持續 `2m`
+- `PublicWebSlowResponse`
+  - `role=public-web` 的 HTTP probe 回應時間 `> 2 秒`，持續 `5m`
+- `PublicWebTlsCertificateExpiring`
+  - `role=public-web` 的 TLS 憑證剩餘天數 `< 21 天`，持續 `1h`
 - `AccessPointPingFailed`
   - `probe_success{job="blackbox-icmp", role="access-point"} < 1`，持續 `2m`
 - `LinuxCpuHigh`
@@ -193,6 +201,8 @@
 
 - `http-services.yml`
   - HTTP / HTTPS 可用性探測
+- `http-services.local.yml`
+  - 站點專屬的 HTTP / HTTPS 可用性探測目標
 - `tcp-services.yml`
   - TCP 連接埠可用性探測
 - `icmp-services.yml` / `icmp-services.local.yml`
@@ -347,6 +357,12 @@ global:
 - 記憶體
 - 檔案系統
 - 網路介面
+
+自訂主機端指標：
+
+- Compose 已啟用 `--collector.textfile.directory=/var/lib/node_exporter/textfile`，並將 repository 的 `node-exporter/textfile/` 唯讀掛入該路徑。
+- root 權限的主機端工作會在內容完整後才更新 `node-exporter/textfile/*.prom`，避免 node_exporter 讀到不完整資料；既有的 `node-exporter` Prometheus job 會一併抓取這些指標。
+- `*.prom` 是 runtime 產物、不可提交；Fail2ban collector、systemd timer 與維護方式請看 [FAIL2BAN-MONITORING.md](./FAIL2BAN-MONITORING.md)。
 
 ### `windows-exporter`
 
@@ -752,6 +768,20 @@ legacy_v2:
 - 趨勢圖通常用 `timeseries`
 - 即時摘要通常用 `stat`
 - 明細列表通常用 `table`
+
+### 想新增主機端自訂 metric
+
+改：
+
+- 主機端 collector script
+- `node-exporter/textfile/*.prom`（runtime 輸出，不提交）
+- 視需要增加對應 dashboard JSON 與文件
+
+補充：
+
+- node_exporter 的 textfile collector 只負責讀取，資料蒐集與 root 權限應留在 systemd service 或受限的主機端工作。
+- label 僅使用穩定且低基數的維度；不要將 IP、帳號、URL、request ID 寫成 label。
+- 完整的 Fail2ban 範例與接手流程請看 [FAIL2BAN-MONITORING.md](./FAIL2BAN-MONITORING.md)。
 
 ### 想新增一條告警規則
 

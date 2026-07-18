@@ -9,4 +9,6 @@ secrets/
 logs/*.log
 logs/*.log-*
 logs/*.gz
+# node_exporter textfile collector 的主機端 runtime metrics。
+node-exporter/textfile/*.prom
 需求說明.txt

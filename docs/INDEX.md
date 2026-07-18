@@ -10,6 +10,9 @@
 4. [EXTENDING.md](./EXTENDING.md)
 5. [TROUBLESHOOTING.md](./TROUBLESHOOTING.md)
 6. [DASHBOARDS.md](./DASHBOARDS.md)
+7. [ALERTS.md](./ALERTS.md)
+8. [WEBSITE-SERVICE-MONITORING.md](./WEBSITE-SERVICE-MONITORING.md)
+9. [FAIL2BAN-MONITORING.md](./FAIL2BAN-MONITORING.md)
 
 ## 文件用途
 
@@ -27,6 +30,15 @@
 
 - [DASHBOARDS.md](./DASHBOARDS.md)
   - 各 dashboard 的用途、面板重點與判讀方式
+
+- [ALERTS.md](./ALERTS.md)
+  - Grafana 告警的名稱、門檻、通知與安全套用方式
+
+- [WEBSITE-SERVICE-MONITORING.md](./WEBSITE-SERVICE-MONITORING.md)
+  - 公開網站服務的 target、dashboard、告警與驗證維護流程
+
+- [FAIL2BAN-MONITORING.md](./FAIL2BAN-MONITORING.md)
+  - Fail2ban、SSH 與 Nginx 登入失敗的 metrics、dashboard、維護與擴充流程
 
 ## 功能與檔案速查
 
@@ -61,12 +73,22 @@
   - dashboard 看 `grafana/dashboards/docker-compose-overview.json`
   - 文件看 [CONFIG-REFERENCE.md](./CONFIG-REFERENCE.md)
 
+- Fail2ban、SSH 與 `/file/` 登入失敗監控
+  - collector 看 `scripts/collect-fail2ban-metrics.sh`
+  - systemd service/timer 看 `systemd/fail2ban-metrics-collector.*`
+  - node_exporter textfile 目錄看 `node-exporter/textfile/`
+  - dashboard 看 `grafana/dashboards/fail2ban-security-overview.json`
+  - 維護流程看 [FAIL2BAN-MONITORING.md](./FAIL2BAN-MONITORING.md)
+
 - HTTP / TCP / ICMP 服務與裝置可用性探測
   - HTTP target 看 `prometheus/file_sd/http-services.yml`
+  - 站點專屬 HTTP target 看 `prometheus/file_sd/http-services.local.yml`
   - TCP target 看 `prometheus/file_sd/tcp-services.yml`
   - ICMP target 看 `prometheus/file_sd/icmp-services.local.yml`
   - Prometheus job 看 `prometheus/prometheus.yml`
   - dashboard 看 `grafana/dashboards/infrastructure-overview.json`
+  - 公開網站服務明細 dashboard 看 `grafana/dashboards/website-service-overview.json`
+  - 公開網站服務維護看 [WEBSITE-SERVICE-MONITORING.md](./WEBSITE-SERVICE-MONITORING.md)
   - 文件看 [SETUP-GUIDE.md](./SETUP-GUIDE.md) 與 [CONFIG-REFERENCE.md](./CONFIG-REFERENCE.md)
 
 - Grafana dashboard 自動匯入
@@ -80,7 +102,7 @@
   - 通知模板看 `grafana/provisioning/alerting/templates.yml`
   - provisioning 設定看 `grafana/provisioning/alerting/`
   - Telegram secrets 看 `secrets/grafana-alerting/`
-  - 文件看 [EXTENDING.md](./EXTENDING.md)、[CONFIG-REFERENCE.md](./CONFIG-REFERENCE.md) 與 [TROUBLESHOOTING.md](./TROUBLESHOOTING.md)
+  - 文件看 [ALERTS.md](./ALERTS.md)、[EXTENDING.md](./EXTENDING.md)、[CONFIG-REFERENCE.md](./CONFIG-REFERENCE.md) 與 [TROUBLESHOOTING.md](./TROUBLESHOOTING.md)
 
 ## 依情境找文件
 

@@ -1,0 +1,126 @@
+{
+  "annotations": { "list": [] },
+  "editable": true,
+  "graphTooltip": 0,
+  "links": [],
+  "panels": [
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "color": { "mode": "thresholds" }, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 5 }, { "color": "red", "value": 20 }] } }, "overrides": [] },
+      "gridPos": { "h": 7, "w": 6, "x": 0, "y": 0 },
+      "id": 1,
+      "options": { "colorMode": "background", "graphMode": "none", "justifyMode": "center", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "textMode": "auto" },
+      "targets": [{ "expr": "sum(fail2ban_jail_current_banned{instance=~\"$instance\"})", "instant": true, "refId": "A" }],
+      "title": "目前有效封鎖 IP",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "color": { "mode": "thresholds" }, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 10 }, { "color": "red", "value": 50 }] } }, "overrides": [] },
+      "gridPos": { "h": 7, "w": 6, "x": 6, "y": 0 },
+      "id": 2,
+      "options": { "colorMode": "background", "graphMode": "none", "justifyMode": "center", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "textMode": "auto" },
+      "targets": [{ "expr": "max(fail2ban_ssh_password_failures{instance=~\"$instance\"})", "instant": true, "refId": "A" }],
+      "title": "SSH 密碼驗證失敗（設定觀察期）",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "color": { "mode": "thresholds" }, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 10 }, { "color": "red", "value": 50 }] } }, "overrides": [] },
+      "gridPos": { "h": 7, "w": 6, "x": 12, "y": 0 },
+      "id": 3,
+      "options": { "colorMode": "background", "graphMode": "none", "justifyMode": "center", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "textMode": "auto" },
+      "targets": [{ "expr": "max(fail2ban_file_login_failures_retained_nginx_logs{instance=~\"$instance\"})", "instant": true, "refId": "A" }],
+      "title": "/file/ 密碼錯誤（保留日誌）",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "color": { "mode": "thresholds" }, "decimals": 0, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 120 }, { "color": "red", "value": 300 }] }, "unit": "s" }, "overrides": [] },
+      "gridPos": { "h": 7, "w": 6, "x": 18, "y": 0 },
+      "id": 4,
+      "options": { "colorMode": "background", "graphMode": "none", "justifyMode": "center", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "textMode": "auto" },
+      "targets": [{ "expr": "time() - max(fail2ban_metrics_last_success_unixtime{instance=~\"$instance\"})", "instant": true, "refId": "A" }],
+      "title": "collector 距離上次成功",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "color": { "mode": "palette-classic" }, "custom": { "axisCenteredZero": false, "axisColorMode": "text", "axisLabel": "IP 數", "axisPlacement": "auto", "drawStyle": "line", "fillOpacity": 12, "lineInterpolation": "smooth", "lineWidth": 2, "pointSize": 5, "showPoints": "auto", "stacking": { "group": "A", "mode": "none" } }, "unit": "none" }, "overrides": [] },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 7 },
+      "id": 5,
+      "options": { "legend": { "calcs": ["lastNotNull", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [{ "expr": "fail2ban_jail_current_banned{instance=~\"$instance\"}", "legendFormat": "{{jail}}", "refId": "A" }],
+      "title": "各 jail 目前封鎖數",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "color": { "mode": "palette-classic" }, "custom": { "axisCenteredZero": true, "axisColorMode": "text", "axisLabel": "新增封鎖", "axisPlacement": "auto", "drawStyle": "bars", "fillOpacity": 35, "lineWidth": 1, "pointSize": 5, "showPoints": "never", "stacking": { "group": "A", "mode": "none" } }, "unit": "none" }, "overrides": [] },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 7 },
+      "id": 6,
+      "options": { "legend": { "calcs": ["sum"], "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [{ "expr": "increase(fail2ban_jail_bans_total{instance=~\"$instance\"}[$__rate_interval])", "legendFormat": "{{jail}}", "refId": "A" }],
+      "title": "短時間新增封鎖",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "custom": { "align": "auto", "cellOptions": { "type": "auto" }, "inspect": false }, "decimals": 0 }, "overrides": [] },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 15 },
+      "id": 7,
+      "options": { "showHeader": true },
+      "targets": [
+        { "expr": "fail2ban_jail_current_failed{instance=~\"$instance\"}", "format": "table", "instant": true, "refId": "A" },
+        { "expr": "fail2ban_jail_failures_total{instance=~\"$instance\"}", "format": "table", "instant": true, "refId": "B" },
+        { "expr": "fail2ban_jail_current_banned{instance=~\"$instance\"}", "format": "table", "instant": true, "refId": "C" },
+        { "expr": "fail2ban_jail_bans_total{instance=~\"$instance\"}", "format": "table", "instant": true, "refId": "D" }
+      ],
+      "title": "各 jail 即時與累計計數",
+      "transformations": [
+        { "id": "joinByField", "options": { "byField": "jail", "mode": "outer" } },
+        { "id": "organize", "options": { "excludeByName": { "Time": true, "instance": true, "job": true, "site": true, "role": true }, "renameByName": { "Value #A": "目前失敗", "Value #B": "累計失敗", "Value #C": "目前封鎖", "Value #D": "累計封鎖", "jail": "Jail" } } }
+      ],
+      "type": "table"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "color": { "mode": "palette-classic" }, "custom": { "axisCenteredZero": false, "axisColorMode": "text", "axisLabel": "次數", "axisPlacement": "auto", "drawStyle": "line", "fillOpacity": 12, "lineInterpolation": "smooth", "lineWidth": 2, "pointSize": 5, "showPoints": "auto", "stacking": { "group": "A", "mode": "none" } }, "unit": "none" }, "overrides": [] },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 15 },
+      "id": 8,
+      "options": { "legend": { "calcs": ["lastNotNull", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [
+        { "expr": "fail2ban_ssh_password_failures{instance=~\"$instance\"}", "legendFormat": "SSH 密碼失敗（{{window_days}} 天）", "refId": "A" },
+        { "expr": "fail2ban_ssh_invalid_user_attempts{instance=~\"$instance\"}", "legendFormat": "SSH 不存在帳號（{{window_days}} 天）", "refId": "B" },
+        { "expr": "fail2ban_file_login_failures_retained_nginx_logs{instance=~\"$instance\"}", "legendFormat": "/file/ 密碼錯誤（保留日誌）", "refId": "C" }
+      ],
+      "title": "SSH 與 Nginx 登入失敗趨勢",
+      "type": "timeseries"
+    }
+  ],
+  "refresh": "1m",
+  "schemaVersion": 39,
+  "tags": ["security", "fail2ban"],
+  "templating": {
+    "list": [
+      {
+        "current": { "selected": true, "text": ".*", "value": ".*" },
+        "datasource": { "type": "prometheus", "uid": "prometheus" },
+        "definition": "label_values(fail2ban_metrics_last_success_unixtime, instance)",
+        "includeAll": true,
+        "label": "監控主機",
+        "multi": false,
+        "name": "instance",
+        "options": [],
+        "query": { "query": "label_values(fail2ban_metrics_last_success_unixtime, instance)", "refId": "Prometheus-instance" },
+        "refresh": 1,
+        "type": "query"
+      }
+    ]
+  },
+  "time": { "from": "now-24h", "to": "now" },
+  "timezone": "browser",
+  "title": "Fail2ban 安全監控",
+  "uid": "fail2ban-security-overview",
+  "version": 1
+}

@@ -53,10 +53,12 @@ make bootstrap
 - `prometheus/file_sd/windows-hosts.local.yml`
 - `prometheus/file_sd/snmp-devices.local.yml`
 - `prometheus/file_sd/icmp-services.local.yml`
+- `prometheus/file_sd/http-services.local.yml`
 - `prometheus/data`
 - `grafana/data`
 - `grafana/runtime`
 - `snmp/generated`
+- `node-exporter/textfile`
 - `secrets/grafana-alerting/telegram_bot_token`
 - `secrets/grafana-alerting/telegram_chat_id`
 
@@ -124,7 +126,7 @@ make bootstrap
 
 ### 3.3 HTTP / TCP / ICMP 服務探測
 
-- HTTP / HTTPS：改 `prometheus/file_sd/http-services.yml`
+- HTTP / HTTPS：共用範例放在 `prometheus/file_sd/http-services.yml`，站點專屬 URL 放在 `prometheus/file_sd/http-services.local.yml`
 - TCP：改 `prometheus/file_sd/tcp-services.yml`
 - ICMP：改 `prometheus/file_sd/icmp-services.local.yml`
 
@@ -138,6 +140,22 @@ TP-Link Deco X20 這類家用 AP 若沒有提供 SNMP，建議至少先做 ICMP 
     service: tplink-x20-ping
     role: access-point
     site: home
+```
+
+公開網站服務可使用 `public-web` role，讓「網站服務監控」dashboard 與相關告警只篩選這類 HTTP probe：
+
+```yaml
+- targets: ["https://www.example.com/"]
+  labels:
+    service: example-public-web
+    role: public-web
+```
+
+`http-services.local.yml` 會由 Prometheus 容器以唯讀方式載入，檔案必須可讀；建議權限為 `0644`。新增或調整 HTTP target 後，可不重啟服務，直接重新載入 Prometheus 設定：
+
+```bash
+chmod 0644 prometheus/file_sd/http-services.local.yml
+curl -fsS -X POST http://127.0.0.1:9090/-/reload
 ```
 
 如果你想間接看 X20 的 uplink 流量，則改從 `ER-X` 那一側觀察：
@@ -220,6 +238,8 @@ make ps
 ```bash
 docker compose up -d --force-recreate grafana
 ```
+
+注意：Grafana 同時掛載資料目錄與 dashboard 子目錄，兩者的順序不可對調。若新增 JSON dashboard 後未顯示，先確認 `docker-compose.yml` 中 `./grafana/data:/var/lib/grafana` 位於 `./grafana/dashboards:/var/lib/grafana/dashboards:ro` 之前，再重建 Grafana。
 
 改完 Prometheus target / scrape 設定：
 

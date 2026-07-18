@@ -1,0 +1,147 @@
+{
+  "annotations": { "list": [] },
+  "description": "監控公開網站服務的可用性、HTTP 回應狀態、回應時間與 TLS 憑證到期日。此 dashboard 顯示 service label，適合內部使用，不應設為公開分享。",
+  "editable": true,
+  "links": [],
+  "panels": [
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "description": "role=public-web 的 HTTP 探測服務數量。",
+      "fieldConfig": { "defaults": { "color": { "fixedColor": "blue", "mode": "fixed" }, "decimals": 0 }, "overrides": [] },
+      "gridPos": { "h": 5, "w": 6, "x": 0, "y": 0 },
+      "id": 1,
+      "options": { "colorMode": "background", "graphMode": "none", "justifyMode": "center", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "textMode": "value_and_name" },
+      "targets": [{ "expr": "count(probe_success{job=\"blackbox-http\", role=\"public-web\"})", "legendFormat": "受監測服務", "refId": "A" }],
+      "title": "受監測網站服務",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "description": "最近一次探測成功的網站服務數量。",
+      "fieldConfig": { "defaults": { "color": { "mode": "thresholds" }, "decimals": 0, "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "green", "value": 1 }] } }, "overrides": [] },
+      "gridPos": { "h": 5, "w": 6, "x": 6, "y": 0 },
+      "id": 2,
+      "options": { "colorMode": "background", "graphMode": "none", "justifyMode": "center", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "textMode": "value_and_name" },
+      "targets": [{ "expr": "sum(probe_success{job=\"blackbox-http\", role=\"public-web\"})", "legendFormat": "目前正常", "refId": "A" }],
+      "title": "目前正常服務",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "description": "最近一次探測失敗的網站服務數量。",
+      "fieldConfig": { "defaults": { "color": { "mode": "thresholds" }, "decimals": 0, "mappings": [{ "options": { "0": { "color": "green", "index": 0, "text": "無異常" } }, "type": "value" }], "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "red", "value": 1 }] } }, "overrides": [] },
+      "gridPos": { "h": 5, "w": 6, "x": 12, "y": 0 },
+      "id": 3,
+      "options": { "colorMode": "background", "graphMode": "none", "justifyMode": "center", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "textMode": "value_and_name" },
+      "targets": [{ "expr": "sum(1 - probe_success{job=\"blackbox-http\", role=\"public-web\"})", "legendFormat": "目前異常", "refId": "A" }],
+      "title": "目前異常服務",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "description": "所有網站服務在最近 24 小時的平均可用性。",
+      "fieldConfig": { "defaults": { "color": { "mode": "thresholds" }, "decimals": 2, "max": 100, "min": 0, "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "orange", "value": 99 }, { "color": "green", "value": 99.9 }] }, "unit": "percent" }, "overrides": [] },
+      "gridPos": { "h": 5, "w": 6, "x": 18, "y": 0 },
+      "id": 4,
+      "options": { "colorMode": "background", "graphMode": "area", "justifyMode": "center", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "textMode": "value_and_name" },
+      "targets": [{ "expr": "100 * avg(avg_over_time(probe_success{job=\"blackbox-http\", role=\"public-web\"}[24h]))", "legendFormat": "最近 24 小時", "refId": "A" }],
+      "title": "24 小時平均可用性",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "description": "每個服務最近一次 HTTP probe 是否成功。",
+      "fieldConfig": { "defaults": { "color": { "mode": "thresholds" }, "mappings": [{ "options": { "0": { "color": "red", "index": 1, "text": "異常" }, "1": { "color": "green", "index": 0, "text": "正常" } }, "type": "value" }], "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "green", "value": 1 }] } }, "overrides": [] },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 5 },
+      "id": 5,
+      "options": { "displayMode": "gradient", "minVizHeight": 10, "minVizWidth": 0, "orientation": "horizontal", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "showUnfilled": true, "valueMode": "text" },
+      "targets": [{ "expr": "probe_success{job=\"blackbox-http\", role=\"public-web\", instance=~\"$service\"}", "instant": true, "legendFormat": "{{instance}}", "refId": "A" }],
+      "title": "服務目前狀態",
+      "type": "bargauge"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "description": "每個服務最近一次 HTTP 回應狀態碼。",
+      "fieldConfig": { "defaults": { "color": { "mode": "thresholds" }, "decimals": 0, "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "orange", "value": 200 }, { "color": "green", "value": 200 }, { "color": "red", "value": 300 }] } }, "overrides": [] },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 5 },
+      "id": 6,
+      "options": { "displayMode": "gradient", "minVizHeight": 10, "minVizWidth": 0, "orientation": "horizontal", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "showUnfilled": true, "valueMode": "color" },
+      "targets": [{ "expr": "probe_http_status_code{job=\"blackbox-http\", role=\"public-web\", instance=~\"$service\"}", "instant": true, "legendFormat": "{{instance}}", "refId": "A" }],
+      "title": "目前 HTTP 狀態碼",
+      "type": "bargauge"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "description": "以 5 分鐘移動平均顯示各服務的可用性；100% 代表期間內所有探測成功。",
+      "fieldConfig": { "defaults": { "color": { "mode": "palette-classic" }, "decimals": 2, "max": 100, "min": 0, "unit": "percent" }, "overrides": [] },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 13 },
+      "id": 7,
+      "options": { "legend": { "calcs": ["lastNotNull", "mean", "min"], "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [{ "expr": "100 * avg_over_time(probe_success{job=\"blackbox-http\", role=\"public-web\", instance=~\"$service\"}[5m])", "legendFormat": "{{instance}}", "refId": "A" }],
+      "title": "服務可用性",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "description": "各服務每次 HTTP probe 的完整回應時間。",
+      "fieldConfig": { "defaults": { "color": { "mode": "palette-classic" }, "decimals": 0, "unit": "ms" }, "overrides": [] },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 13 },
+      "id": 8,
+      "options": { "legend": { "calcs": ["lastNotNull", "mean", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [{ "expr": "1000 * probe_duration_seconds{job=\"blackbox-http\", role=\"public-web\", instance=~\"$service\"}", "legendFormat": "{{instance}}", "refId": "A" }],
+      "title": "服務回應時間",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "description": "可快速查看每個服務何時正常或異常。",
+      "fieldConfig": { "defaults": { "color": { "mode": "thresholds" }, "mappings": [{ "options": { "0": { "color": "red", "index": 1, "text": "異常" }, "1": { "color": "green", "index": 0, "text": "正常" } }, "type": "value" }], "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "green", "value": 1 }] } }, "overrides": [] },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 21 },
+      "id": 9,
+      "options": { "alignValue": "left", "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true }, "mergeValues": true, "showValue": "auto", "tooltip": { "mode": "single", "sort": "none" } },
+      "targets": [{ "expr": "probe_success{job=\"blackbox-http\", role=\"public-web\", instance=~\"$service\"}", "legendFormat": "{{instance}}", "refId": "A" }],
+      "title": "服務回應狀態",
+      "type": "state-timeline"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "description": "HTTPS 憑證距離到期的剩餘天數；未提供 TLS 憑證的服務不會顯示。",
+      "fieldConfig": { "defaults": { "color": { "mode": "thresholds" }, "decimals": 0, "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "orange", "value": 21 }, { "color": "green", "value": 60 }] }, "unit": "dtdays" }, "overrides": [] },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 21 },
+      "id": 10,
+      "options": { "displayMode": "gradient", "minVizHeight": 10, "minVizWidth": 0, "orientation": "horizontal", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "showUnfilled": true, "valueMode": "color" },
+      "targets": [{ "expr": "(probe_ssl_earliest_cert_expiry{job=\"blackbox-http\", role=\"public-web\", instance=~\"$service\"} - time()) / 86400", "instant": true, "legendFormat": "{{instance}}", "refId": "A" }],
+      "title": "TLS 憑證剩餘天數",
+      "type": "bargauge"
+    }
+  ],
+  "refresh": "1m",
+  "schemaVersion": 39,
+  "tags": ["monitoring", "website", "blackbox"],
+  "templating": {
+    "list": [
+      {
+        "current": { "selected": true, "text": "All", "value": "$__all" },
+        "allValue": ".*",
+        "datasource": { "type": "prometheus", "uid": "prometheus" },
+        "definition": "label_values(probe_success{job=\"blackbox-http\", role=\"public-web\"}, instance)",
+        "hide": 0,
+        "includeAll": true,
+        "label": "服務",
+        "multi": true,
+        "name": "service",
+        "options": [],
+        "query": { "query": "label_values(probe_success{job=\"blackbox-http\", role=\"public-web\"}, instance)", "refId": "Prometheus-service" },
+        "refresh": 1,
+        "regex": "",
+        "sort": 1,
+        "type": "query"
+      }
+    ]
+  },
+  "time": { "from": "now-24h", "to": "now" },
+  "timezone": "browser",
+  "title": "網站服務監控",
+  "uid": "website-service-overview",
+  "version": 1
+}

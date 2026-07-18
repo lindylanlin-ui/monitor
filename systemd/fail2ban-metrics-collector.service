@@ -1,0 +1,10 @@
+[Unit]
+Description=蒐集 Fail2ban、SSH 與 Nginx 登入失敗 Prometheus metrics
+After=fail2ban.service systemd-journald.service
+Wants=fail2ban.service
+
+[Service]
+Type=oneshot
+User=root
+EnvironmentFile=-/etc/default/fail2ban-metrics-collector
+ExecStart=/usr/local/sbin/collect-fail2ban-metrics.sh

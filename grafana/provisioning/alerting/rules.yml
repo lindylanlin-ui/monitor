@@ -17,12 +17,12 @@ deleteRules:
 
 groups:
   - orgId: 1
-    name: availability
-    folder: Infrastructure Alerts
+    name: 可用性
+    folder: 基礎設施告警
     interval: 30s
     rules:
       - uid: target_down
-        title: TargetDown
+        title: 監控目標離線
         condition: B
         data:
           - refId: A
@@ -91,7 +91,7 @@ groups:
           repeat_interval: 4h
 
       - uid: service_probe_failed
-        title: ServiceProbeFailed
+        title: 服務探測失敗
         condition: B
         data:
           - refId: A
@@ -160,7 +160,7 @@ groups:
           repeat_interval: 4h
 
       - uid: access_point_ping_failed
-        title: AccessPointPingFailed
+        title: 無線基地台 Ping 失敗
         condition: B
         data:
           - refId: A
@@ -228,13 +228,111 @@ groups:
           group_interval: 5m
           repeat_interval: 4h
 
+      - uid: public_web_slow_response
+        title: 公開網站回應過慢
+        condition: B
+        data:
+          - refId: A
+            datasourceUid: prometheus
+            relativeTimeRange: { from: 600, to: 0 }
+            model:
+              datasource: { type: prometheus, uid: prometheus }
+              editorMode: code
+              expr: 1000 * probe_duration_seconds{job="blackbox-http", role="public-web"}
+              instant: true
+              intervalMs: 1000
+              maxDataPoints: 43200
+              range: false
+              refId: A
+          - refId: B
+            datasourceUid: __expr__
+            relativeTimeRange: { from: 0, to: 0 }
+            model:
+              conditions:
+                - evaluator: { params: [2000], type: gt }
+                  operator: { type: and }
+                  query: { params: [A] }
+                  reducer: { params: [], type: last }
+                  type: query
+              datasource: { type: __expr__, uid: __expr__ }
+              expression: A
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: B
+              type: classic_conditions
+        dashboardUid: website-service-overview
+        panelId: 8
+        noDataState: OK
+        executionErrorState: Error
+        for: 5m
+        annotations:
+          summary: "{{ range $k, $v := $values }}{{ if (match \"B[0-9]+\" $k) }}{{ if index $v.Labels \"instance\" }}{{ index $v.Labels \"instance\" }} 回應過慢{{ else }}公開網站服務回應過慢{{ end }}{{ end }}{{ end }}"
+          description: "公開網站服務的 HTTP probe 回應時間已連續 5 分鐘超過 2 秒。"
+        labels: { severity: warning }
+        isPaused: false
+        notification_settings:
+          receiver: telegram-monitoring
+          group_by: [alertname, grafana_folder, instance]
+          group_wait: 30s
+          group_interval: 5m
+          repeat_interval: 4h
+
+      - uid: public_web_tls_certificate_expiring
+        title: 公開網站 TLS 憑證即將到期
+        condition: B
+        data:
+          - refId: A
+            datasourceUid: prometheus
+            relativeTimeRange: { from: 7200, to: 0 }
+            model:
+              datasource: { type: prometheus, uid: prometheus }
+              editorMode: code
+              expr: (probe_ssl_earliest_cert_expiry{job="blackbox-http", role="public-web"} - time()) / 86400
+              instant: true
+              intervalMs: 1000
+              maxDataPoints: 43200
+              range: false
+              refId: A
+          - refId: B
+            datasourceUid: __expr__
+            relativeTimeRange: { from: 0, to: 0 }
+            model:
+              conditions:
+                - evaluator: { params: [21], type: lt }
+                  operator: { type: and }
+                  query: { params: [A] }
+                  reducer: { params: [], type: last }
+                  type: query
+              datasource: { type: __expr__, uid: __expr__ }
+              expression: A
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: B
+              type: classic_conditions
+        dashboardUid: website-service-overview
+        panelId: 10
+        noDataState: OK
+        executionErrorState: Error
+        for: 1h
+        annotations:
+          summary: "{{ range $k, $v := $values }}{{ if (match \"B[0-9]+\" $k) }}{{ if index $v.Labels \"instance\" }}{{ index $v.Labels \"instance\" }} TLS 憑證即將到期{{ else }}公開網站服務 TLS 憑證即將到期{{ end }}{{ end }}{{ end }}"
+          description: "公開網站服務的 TLS 憑證剩餘天數少於 21 天，請安排更新。"
+        labels: { severity: warning }
+        isPaused: false
+        notification_settings:
+          receiver: telegram-monitoring
+          group_by: [alertname, grafana_folder, instance]
+          group_wait: 30s
+          group_interval: 5m
+          repeat_interval: 4h
+
   - orgId: 1
-    name: host-and-service-health
-    folder: Infrastructure Alerts
+    name: 主機與服務健康
+    folder: 基礎設施告警
     interval: 1m
     rules:
       - uid: linux_cpu_high
-        title: LinuxCpuHigh
+        title: Linux CPU 使用率過高
         condition: B
         data:
           - refId: A
@@ -300,7 +398,7 @@ groups:
           repeat_interval: 4h
 
       - uid: linux_memory_high
-        title: LinuxMemoryHigh
+        title: Linux 記憶體使用率過高
         condition: B
         data:
           - refId: A
@@ -364,7 +462,7 @@ groups:
           repeat_interval: 4h
 
       - uid: linux_root_disk_high
-        title: LinuxRootDiskHigh
+        title: Linux 根目錄磁碟使用率過高
         condition: B
         data:
           - refId: A
@@ -426,7 +524,7 @@ groups:
           repeat_interval: 4h
 
       - uid: windows_cpu_high
-        title: WindowsCpuHigh
+        title: Windows CPU 使用率過高
         condition: B
         data:
           - refId: A
@@ -490,7 +588,7 @@ groups:
           repeat_interval: 4h
 
       - uid: windows_memory_high
-        title: WindowsMemoryHigh
+        title: Windows 記憶體使用率過高
         condition: B
         data:
           - refId: A
@@ -554,7 +652,7 @@ groups:
           repeat_interval: 4h
 
       - uid: windows_disk_high
-        title: WindowsDiskHigh
+        title: Windows 磁碟使用率過高
         condition: B
         data:
           - refId: A
@@ -616,12 +714,12 @@ groups:
           repeat_interval: 4h
 
   - orgId: 1
-    name: host-hardware-health
-    folder: Infrastructure Alerts
+    name: 主機硬體健康
+    folder: 基礎設施告警
     interval: 1m
     rules:
       - uid: smart_disk_health_failed
-        title: SmartDiskHealthFailed
+        title: SMART 磁碟健康異常
         condition: B
         data:
           - refId: A
@@ -685,7 +783,7 @@ groups:
           repeat_interval: 4h
 
       - uid: ssd_remaining_life_low
-        title: SsdRemainingLifeLow
+        title: SSD 剩餘壽命過低
         condition: B
         data:
           - refId: A
@@ -749,7 +847,7 @@ groups:
           repeat_interval: 12h
 
       - uid: disk_temperature_high
-        title: DiskTemperatureHigh
+        title: 磁碟溫度過高
         condition: B
         data:
           - refId: A
@@ -813,7 +911,7 @@ groups:
           repeat_interval: 4h
 
       - uid: nvme_critical_warning
-        title: NvmeCriticalWarning
+        title: NVMe 控制器嚴重警告
         condition: B
         data:
           - refId: A
@@ -877,7 +975,7 @@ groups:
           repeat_interval: 4h
 
       - uid: nvidia_gpu_temperature_high
-        title: NvidiaGpuTemperatureHigh
+        title: NVIDIA GPU 溫度過高
         condition: B
         data:
           - refId: A
@@ -941,12 +1039,12 @@ groups:
           repeat_interval: 4h
 
   - orgId: 1
-    name: network-edge
-    folder: Infrastructure Alerts
+    name: 網路邊界與 NAS
+    folder: 基礎設施告警
     interval: 1m
     rules:
       - uid: snmp_cpu_high
-        title: SnmpCpuHigh
+        title: SNMP CPU 使用率過高
         condition: B
         data:
           - refId: A
@@ -1010,7 +1108,7 @@ groups:
           repeat_interval: 4h
 
       - uid: snmp_memory_high
-        title: SnmpMemoryHigh
+        title: SNMP 記憶體使用率過高
         condition: B
         data:
           - refId: A
@@ -1138,7 +1236,7 @@ groups:
           repeat_interval: 4h
 
       - uid: router_wan_traffic_spike
-        title: Router WAN 流量異常尖峰
+        title: 路由器 WAN 流量異常尖峰
         condition: B
         data:
           - refId: A

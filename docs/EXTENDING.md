@@ -42,6 +42,7 @@ curl -fsS --get 'http://127.0.0.1:9090/api/v1/query' \
 - HTTP / TCP probe：`prometheus/file_sd/http-services.yml`、`prometheus/file_sd/tcp-services.yml`
 - ICMP probe：`prometheus/file_sd/icmp-services.local.yml`
 - SNMP 模組：`snmp/modules.yml`
+- 主機端自訂資料：node_exporter textfile collector；Fail2ban 實例請看 [FAIL2BAN-MONITORING.md](./FAIL2BAN-MONITORING.md)
 
 ## 3. 新增 dashboard 面板的標準流程
 
@@ -51,6 +52,8 @@ curl -fsS --get 'http://127.0.0.1:9090/api/v1/query' \
 4. 設定 query、標題、單位、legend
 5. 補 `docs/DASHBOARDS.md`
 6. 重載 Grafana
+
+若要從零建立一張可 provision 的 dashboard，請依 [FAIL2BAN-MONITORING.md 的「建立全新 dashboard」](./FAIL2BAN-MONITORING.md#建立全新的-grafana-dashboard) 流程處理 UID、JSON、資料來源與驗證。
 
 常見 panel 類型：
 

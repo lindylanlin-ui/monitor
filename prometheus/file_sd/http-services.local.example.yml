@@ -1,0 +1,8 @@
+# 站點專屬 HTTP / HTTPS 探測目標範本。
+#
+# 請複製為 http-services.local.yml 後填入實際 URL；此範本可提交，
+# 實際檔案會被 Git 忽略，避免站點專屬服務清單進版控。
+- targets: ["https://www.example.com/"]
+  labels:
+    service: example-public-web
+    role: public-web
