@@ -11,7 +11,7 @@
       "id": 1,
       "options": { "colorMode": "background", "graphMode": "none", "justifyMode": "center", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "textMode": "auto" },
       "targets": [{ "expr": "sum(fail2ban_jail_current_banned{instance=~\"$instance\"})", "instant": true, "refId": "A" }],
-      "title": "目前有效封鎖 IP",
+      "title": "目前正在封鎖的 IP 數",
       "type": "stat"
     },
     {
@@ -21,7 +21,7 @@
       "id": 2,
       "options": { "colorMode": "background", "graphMode": "none", "justifyMode": "center", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "textMode": "auto" },
       "targets": [{ "expr": "max(fail2ban_ssh_password_failures{instance=~\"$instance\"})", "instant": true, "refId": "A" }],
-      "title": "SSH 密碼驗證失敗（設定觀察期）",
+      "title": "最近 7 天 SSH 密碼失敗",
       "type": "stat"
     },
     {
@@ -31,17 +31,17 @@
       "id": 3,
       "options": { "colorMode": "background", "graphMode": "none", "justifyMode": "center", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "textMode": "auto" },
       "targets": [{ "expr": "max(fail2ban_file_login_failures_retained_nginx_logs{instance=~\"$instance\"})", "instant": true, "refId": "A" }],
-      "title": "/file/ 密碼錯誤（保留日誌）",
+      "title": "/file/ 密碼錯誤（目前保留日誌）",
       "type": "stat"
     },
     {
       "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "fieldConfig": { "defaults": { "color": { "mode": "thresholds" }, "decimals": 0, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 120 }, { "color": "red", "value": 300 }] }, "unit": "s" }, "overrides": [] },
+      "fieldConfig": { "defaults": { "color": { "mode": "thresholds" }, "decimals": 1, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 2 }, { "color": "red", "value": 5 }] }, "unit": "suffix: 分鐘" }, "overrides": [] },
       "gridPos": { "h": 7, "w": 6, "x": 18, "y": 0 },
       "id": 4,
       "options": { "colorMode": "background", "graphMode": "none", "justifyMode": "center", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "textMode": "auto" },
-      "targets": [{ "expr": "time() - max(fail2ban_metrics_last_success_unixtime{instance=~\"$instance\"})", "instant": true, "refId": "A" }],
-      "title": "collector 距離上次成功",
+      "targets": [{ "expr": "(time() - max(fail2ban_metrics_last_success_unixtime{instance=~\"$instance\"})) / 60", "instant": true, "refId": "A" }],
+      "title": "監控資料上次更新距今",
       "type": "stat"
     },
     {
@@ -51,7 +51,7 @@
       "id": 5,
       "options": { "legend": { "calcs": ["lastNotNull", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
       "targets": [{ "expr": "fail2ban_jail_current_banned{instance=~\"$instance\"}", "legendFormat": "{{jail}}", "refId": "A" }],
-      "title": "各 jail 目前封鎖數",
+      "title": "目前哪個規則正在封鎖？",
       "type": "timeseries"
     },
     {
@@ -60,26 +60,26 @@
       "gridPos": { "h": 8, "w": 12, "x": 12, "y": 7 },
       "id": 6,
       "options": { "legend": { "calcs": ["sum"], "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
-      "targets": [{ "expr": "increase(fail2ban_jail_bans_total{instance=~\"$instance\"}[$__rate_interval])", "legendFormat": "{{jail}}", "refId": "A" }],
-      "title": "短時間新增封鎖",
+      "targets": [{ "expr": "increase(fail2ban_jail_bans_total{instance=~\"$instance\"}[15m])", "legendFormat": "{{jail}}", "refId": "A" }],
+      "title": "最近 15 分鐘新增封鎖",
       "type": "timeseries"
     },
     {
       "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "description": "先看「目前封鎖」判斷現在是否仍在阻擋來源；兩個「本次啟動累計」用於觀察 Fail2ban 服務啟動後的攻擊量。",
       "fieldConfig": { "defaults": { "custom": { "align": "auto", "cellOptions": { "type": "auto" }, "inspect": false }, "decimals": 0 }, "overrides": [] },
       "gridPos": { "h": 8, "w": 12, "x": 0, "y": 15 },
       "id": 7,
       "options": { "showHeader": true },
       "targets": [
-        { "expr": "fail2ban_jail_current_failed{instance=~\"$instance\"}", "format": "table", "instant": true, "refId": "A" },
-        { "expr": "fail2ban_jail_failures_total{instance=~\"$instance\"}", "format": "table", "instant": true, "refId": "B" },
-        { "expr": "fail2ban_jail_current_banned{instance=~\"$instance\"}", "format": "table", "instant": true, "refId": "C" },
-        { "expr": "fail2ban_jail_bans_total{instance=~\"$instance\"}", "format": "table", "instant": true, "refId": "D" }
+        { "expr": "fail2ban_jail_current_banned{instance=~\"$instance\"}", "format": "table", "instant": true, "refId": "A" },
+        { "expr": "fail2ban_jail_bans_total{instance=~\"$instance\"}", "format": "table", "instant": true, "refId": "B" },
+        { "expr": "fail2ban_jail_failures_total{instance=~\"$instance\"}", "format": "table", "instant": true, "refId": "C" }
       ],
-      "title": "各 jail 即時與累計計數",
+      "title": "防護規則摘要（目前與累計）",
       "transformations": [
-        { "id": "joinByField", "options": { "byField": "jail", "mode": "outer" } },
-        { "id": "organize", "options": { "excludeByName": { "Time": true, "instance": true, "job": true, "site": true, "role": true }, "renameByName": { "Value #A": "目前失敗", "Value #B": "累計失敗", "Value #C": "目前封鎖", "Value #D": "累計封鎖", "jail": "Jail" } } }
+        { "id": "joinByField", "options": { "byField": "jail", "mode": "outerTabular" } },
+        { "id": "organize", "options": { "excludeByName": { "Time": true, "Time 1": true, "Time 2": true, "__name__": true, "__name__ 1": true, "__name__ 2": true, "device": true, "device 1": true, "device 2": true, "instance": true, "instance 1": true, "instance 2": true, "job": true, "job 1": true, "job 2": true, "site": true, "site 1": true, "site 2": true, "role": true, "role 1": true, "role 2": true }, "renameByName": { "Value #A": "目前封鎖", "Value #B": "本次啟動累計封鎖", "Value #C": "本次啟動累計失敗", "jail": "防護規則" } } }
       ],
       "type": "table"
     },
@@ -94,8 +94,18 @@
         { "expr": "fail2ban_ssh_invalid_user_attempts{instance=~\"$instance\"}", "legendFormat": "SSH 不存在帳號（{{window_days}} 天）", "refId": "B" },
         { "expr": "fail2ban_file_login_failures_retained_nginx_logs{instance=~\"$instance\"}", "legendFormat": "/file/ 密碼錯誤（保留日誌）", "refId": "C" }
       ],
-      "title": "SSH 與 Nginx 登入失敗趨勢",
+      "title": "登入失敗變化",
       "type": "timeseries"
+    },
+    {
+      "gridPos": { "h": 6, "w": 24, "x": 0, "y": 23 },
+      "id": 9,
+      "options": {
+        "content": "### 怎麼看這張安全監控\n\n1. **先看第一排**：目前正在封鎖的 IP 數代表現在仍被封鎖的來源；SSH 與 /file/ 數字代表近期登入失敗活動。\n2. **發現數字突然變高時**：看「最近 15 分鐘新增封鎖」，可知道是否正發生新的掃描或暴力嘗試。\n3. **想知道是哪一種攻擊**：看「目前哪個規則正在封鎖？」與「防護規則摘要（目前與累計）」。sshd 是 SSH 登入嘗試；proxy-404-scan 是掃描不存在網址的行為。\n4. **資料是否正常更新**：監控資料上次更新距今通常應小於 2 分鐘；超過 5 分鐘表示蒐集工作可能異常。\n\n> 這張 dashboard 顯示的是彙總數字，不保存攻擊 IP。需要查 IP 時，請執行 list-fail2ban-banned-ips.sh。",
+        "mode": "markdown"
+      },
+      "title": "這張圖要怎麼看？",
+      "type": "text"
     }
   ],
   "refresh": "1m",
@@ -122,5 +132,5 @@
   "timezone": "browser",
   "title": "Fail2ban 安全監控",
   "uid": "fail2ban-security-overview",
-  "version": 1
+  "version": 3
 }

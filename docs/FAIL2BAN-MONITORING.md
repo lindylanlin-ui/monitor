@@ -120,11 +120,14 @@ docker compose up -d --force-recreate grafana
 
 | 面板 | 主要查詢 | 用途 |
 | --- | --- | --- |
-| 目前有效封鎖 IP | `sum(fail2ban_jail_current_banned)` | 快速確認所有 jail 目前仍封鎖多少來源。 |
-| 各 jail 目前封鎖數 | `fail2ban_jail_current_banned` | 對照是哪個 jail 受掃描。 |
-| 短時間新增封鎖 | `increase(fail2ban_jail_bans_total[$__rate_interval])` | 找出突發攻擊，不以目前封鎖量誤判。 |
-| 各 jail 即時與累計計數 | 四個 `fail2ban_jail_*` 指標 | 同時看目前狀態與 Fail2ban 重啟前的累積量。 |
-| SSH 與 Nginx 登入失敗趨勢 | `fail2ban_ssh_*`、`fail2ban_file_login_*` | 看登入失敗的變化。 |
+| 目前正在封鎖的 IP 數 | `sum(fail2ban_jail_current_banned)` | 目前仍被封鎖的來源總數。 |
+| 最近 7 天 SSH 密碼失敗 | `fail2ban_ssh_password_failures` | SSH 密碼驗證失敗總數；觀察期由 `LOOKBACK_DAYS` 設定。 |
+| `/file/` 密碼錯誤 | `fail2ban_file_login_failures_retained_nginx_logs` | 目前保留的 Nginx log 中 `/file/` HTTP 401 總數。 |
+| 監控資料上次更新距今 | `time() - fail2ban_metrics_last_success_unixtime` | 正常應低於 2 分鐘；超過 5 分鐘先查 timer 與 collector。 |
+| 目前哪個規則正在封鎖？ | `fail2ban_jail_current_banned` | 對照是哪個防護規則受掃描。 |
+| 最近 15 分鐘新增封鎖 | `increase(fail2ban_jail_bans_total[15m])` | 找出正在發生的掃描或暴力嘗試。 |
+| 防護規則摘要（目前與累計） | 三個 `fail2ban_jail_*` 指標 | 看目前封鎖、本次啟動累計封鎖與累計失敗；移除通常為零且不易判讀的目前失敗。 |
+| 登入失敗變化 | `fail2ban_ssh_*`、`fail2ban_file_login_*` | 比較 SSH 與 `/file/` 登入失敗活動是否上升。 |
 
 `fail2ban_jail_bans_total` 與 `fail2ban_jail_failures_total` 在 Fail2ban 重啟時會重設；這符合 Prometheus counter 的 reset 行為，`increase()` 仍適合分析增量。Nginx 指標只反映目前保留的 log，輪替後降低並非 collector 錯誤。
 

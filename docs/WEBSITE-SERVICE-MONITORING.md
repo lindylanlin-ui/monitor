@@ -64,8 +64,10 @@ Dashboard 的固定 UID 是 `website-service-overview`，datasource UID 是 `pro
 | 6 | 目前 HTTP 狀態碼 | `probe_http_status_code` |
 | 7 | 服務可用性趨勢 | `avg_over_time(probe_success[5m])` |
 | 8 | 服務回應時間 | `probe_duration_seconds` |
-| 9 | 服務回應狀態時間線 | `probe_success` |
-| 10 | TLS 憑證剩餘天數 | `probe_ssl_earliest_cert_expiry` |
+| 9 | 服務回應狀態時間線 | `probe_success`；`1` 顯示為「正常」、`0` 顯示為「異常」。 |
+| 10 | TLS 憑證到期清單 | `probe_ssl_earliest_cert_expiry`；顯示剩餘天數與到期日期。 |
+| 11 | 最快到期憑證 | 所有顯示 HTTPS 服務的最小剩餘天數。 |
+| 12 | 21 天內到期服務 | 剩餘少於 21 天的 HTTPS 服務數。 |
 
 要調整既有面板：
 
@@ -87,7 +89,7 @@ Dashboard 的固定 UID 是 `website-service-overview`，datasource UID 是 `pro
    - `state-timeline`：正常／異常區間。
 2. 從相近的既有 panel 複製 JSON，指定尚未使用的 `id` 與不重疊的 `gridPos`。
 3. datasource 固定為 `prometheus`，查詢必須加上 `job="blackbox-http", role="public-web"`；要支援篩選時加入 `instance=~"$service"`。
-4. 為面板設定正確 unit，例如回應時間使用 `ms`、可用性使用 `percent`、TLS 剩餘日數使用 `dtdays`。
+4. 為面板設定正確 unit，例如回應時間使用 `ms`、可用性使用 `percent`；TLS 剩餘日數使用自訂後綴 `suffix: days`，確保畫面直接顯示 `days`。
 5. 若新面板會被告警規則引用，先保留 panel ID，之後才在 `rules.yml` 填入對應的 `dashboardUid` 與 `panelId`。
 
 ## 調整或新增告警

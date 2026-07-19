@@ -34,11 +34,11 @@
       "id": 1,
       "options": { "showHeader": true },
       "targets": [
-        { "expr": "smartctl_device_smart_status{job=\"smartctl-exporter\"}", "format": "table", "instant": true, "refId": "A" }
+        { "expr": "smartctl_device_smart_status{job=\"smartctl-exporter\"} * on(instance, exported_device) group_left(model_name, interface) smartctl_device{job=\"smartctl-exporter\"}", "format": "table", "instant": true, "refId": "A" }
       ],
-      "title": "主機磁碟 SMART 健康狀態",
+      "title": "主機磁碟 SMART 健康狀態（裝置與型號）",
       "transformations": [
-        { "id": "organize", "options": { "excludeByName": { "Time": true, "__name__": true, "job": true, "role": true, "site": true }, "renameByName": { "device": "磁碟", "instance": "主機", "Value": "健康狀態" } } }
+        { "id": "organize", "options": { "excludeByName": { "Time": true, "__name__": true, "device": true, "job": true, "role": true, "site": true }, "renameByName": { "exported_device": "裝置", "instance": "主機", "interface": "介面", "model_name": "型號", "Value": "健康狀態" } } }
       ],
       "type": "table"
     },
@@ -69,9 +69,9 @@
       "id": 3,
       "options": { "legend": { "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "multi" } },
       "targets": [
-        { "expr": "smartctl_device_temperature{job=\"smartctl-exporter\"}", "legendFormat": "{{device}} {{temperature_type}}", "refId": "A" }
+        { "expr": "smartctl_device_temperature{job=\"smartctl-exporter\", temperature_type=\"current\"} * on(instance, exported_device) group_left(model_name) smartctl_device{job=\"smartctl-exporter\"}", "legendFormat": "{{exported_device}} — {{model_name}}", "refId": "A" }
       ],
-      "title": "磁碟溫度",
+      "title": "磁碟目前溫度（裝置與型號）",
       "type": "timeseries"
     },
     {
@@ -103,9 +103,9 @@
       "id": 5,
       "options": { "legend": { "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "multi" } },
       "targets": [
-        { "expr": "rate(node_disk_io_time_seconds_total{job=\"node-exporter\", device!~\"loop.*|ram.*|fd.*|sr.*\"}[5m]) * 100", "legendFormat": "{{instance}} {{device}}", "refId": "A" }
+        { "expr": "label_replace(rate(node_disk_io_time_seconds_total{job=\"node-exporter\", exported_device!~\"loop.*|ram.*|fd.*|sr.*\"}[5m]) * 100, \"io_device\", \"$1\", \"exported_device\", \"(.+)\") * on(instance, io_device) group_left(model_name) (label_replace(smartctl_device{job=\"smartctl-exporter\", exported_device=~\"nvme[0-9]+\"}, \"io_device\", \"${1}n1\", \"exported_device\", \"^(nvme[0-9]+)$\") or label_replace(smartctl_device{job=\"smartctl-exporter\", exported_device=~\"sd[a-z]+\"}, \"io_device\", \"$1\", \"exported_device\", \"^(sd[a-z]+)$\"))", "legendFormat": "{{exported_device}} — {{model_name}}", "refId": "A" }
       ],
-      "title": "實體磁碟忙碌時間",
+      "title": "實體磁碟忙碌率（裝置與型號）",
       "type": "timeseries"
     },
     {
@@ -198,6 +198,6 @@
   "timezone": "browser",
   "title": "主機硬體健康",
   "uid": "host-hardware-health",
-  "version": 1,
+  "version": 2,
   "weekStart": ""
 }
