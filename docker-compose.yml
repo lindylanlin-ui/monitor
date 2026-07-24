@@ -25,9 +25,9 @@ services:
         >> /var/log/project/prometheus.log 2>&1
     logging:
       driver: none
-    # 對外開放 Prometheus UI / API。
+    # 僅對本機開放 Prometheus UI / API；容器間以 monitoring network 存取。
     ports:
-      - "${PROMETHEUS_PORT}:9090"
+      - "127.0.0.1:${PROMETHEUS_PORT}:9090"
     depends_on:
       - node-exporter
       - cadvisor
@@ -54,7 +54,8 @@ services:
     depends_on:
       - prometheus
     ports:
-      - "${GRAFANA_PORT}:3000"
+      # 本機管理入口；公開 /grafana/ 由 proxy 透過 monitoring network 存取。
+      - "127.0.0.1:${GRAFANA_PORT}:3000"
     # 這些環境變數會在容器第一次啟動時建立初始設定。
     environment:
       GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER}
