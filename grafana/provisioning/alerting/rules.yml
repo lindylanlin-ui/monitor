@@ -159,6 +159,75 @@ groups:
           group_interval: 5m
           repeat_interval: 4h
 
+      - uid: proxy_public_route_intermittent_failure
+        title: Proxy 公開路由異常
+        condition: B
+        data:
+          - refId: A
+            datasourceUid: prometheus
+            relativeTimeRange:
+              from: 600
+              to: 0
+            model:
+              datasource:
+                type: prometheus
+                uid: prometheus
+              editorMode: code
+              expr: sum_over_time((1 - probe_success{job="blackbox-http", role="public-web", service=~"tuffy-(grafana|home|file|resume|stock|xmas)"})[3m:30s])
+              instant: true
+              intervalMs: 1000
+              maxDataPoints: 43200
+              range: false
+              refId: A
+          - refId: B
+            datasourceUid: __expr__
+            relativeTimeRange:
+              from: 0
+              to: 0
+            model:
+              conditions:
+                - evaluator:
+                    params:
+                      - 1
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params:
+                      - A
+                  reducer:
+                    params: []
+                    type: last
+                  type: query
+              datasource:
+                type: __expr__
+                uid: __expr__
+              expression: A
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: B
+              type: classic_conditions
+        dashboardUid: docker-compose-overview
+        panelId: 6
+        noDataState: OK
+        executionErrorState: Error
+        for: 0s
+        annotations:
+          summary: "{{ range $k, $v := $values }}{{ if (match \"B[0-9]+\" $k) }}{{ if index $v.Labels \"service\" }}{{ index $v.Labels \"service\" }}{{ else }}Proxy 公開路由{{ end }} 在 3 分鐘內多次探測失敗{{ end }}{{ end }}"
+          description: "{{ range $k, $v := $values }}{{ if (match \"B[0-9]+\" $k) }}{{ if index $v.Labels \"service\" }}{{ index $v.Labels \"service\" }}{{ else }}Proxy 公開路由{{ end }} 在過去 3 分鐘內至少 2 次 Blackbox probe 失敗。容器可能仍顯示 Up；請檢查 Nginx、Docker network 與對應上游服務。{{ end }}{{ end }}"
+        labels:
+          severity: critical
+        isPaused: false
+        notification_settings:
+          receiver: telegram-monitoring
+          group_by:
+            - alertname
+            - grafana_folder
+            - service
+          group_wait: 30s
+          group_interval: 5m
+          repeat_interval: 4h
+
       - uid: access_point_ping_failed
         title: 無線基地台 Ping 失敗
         condition: B

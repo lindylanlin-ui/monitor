@@ -128,6 +128,7 @@ docker compose up -d prometheus
 **目前已提供的告警類型**
 - `TargetDown`
 - `ServiceProbeFailed`
+- `Proxy 公開路由異常`
 - `AccessPointPingFailed`
 - `LinuxCpuHigh`
 - `LinuxMemoryHigh`

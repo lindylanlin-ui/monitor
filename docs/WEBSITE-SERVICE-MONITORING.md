@@ -96,6 +96,7 @@ Dashboard 的固定 UID 是 `website-service-overview`，datasource UID 是 `pro
 
 目前公開網站的專用規則為：
 
+- `proxy_public_route_intermittent_failure`：指定的 proxy 公開路由在 3 分鐘內至少 2 次 probe 失敗即告警。
 - `public_web_slow_response`：回應時間超過 2 秒持續 5 分鐘。
 - `public_web_tls_certificate_expiring`：TLS 憑證剩餘少於 21 天持續 1 小時。
 
