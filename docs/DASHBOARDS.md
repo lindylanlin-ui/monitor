@@ -52,6 +52,7 @@ Grafana dashboard 檔案使用 JSON 格式，而 JSON 本身不支援註解，�
 
 - `基礎設施健康度` 是 Linux、Windows 與 SNMP exporter target 的正常比例；`異常基礎設施目標 = 0` 才代表全部正常。
 - `服務探測健康度` 是 HTTP、TCP 與 ICMP probe 的正常比例；`異常服務探測 = 0` 才代表全部正常。
+- Linux 的 `硬碟使用率` 只顯示根目錄 `/`，並採用 Linux `df` 的使用率計算方式；ext4 保留區塊不會顯示為一般已用空間。
 - Linux 與 Windows 的 CPU、記憶體使用率均採用與 `Linux 網路吞吐量` 相同的時間序列圖表樣式，可對照各主機的趨勢與歷史變化。
 
 ## `docker-compose-overview.json`
@@ -197,6 +198,7 @@ Grafana dashboard 檔案使用 JSON 格式，而 JSON 本身不支援註解，�
 - 不顯示裝置名稱、服務名稱、IP、URL、位置、內網拓撲、流量、容量或磁碟健康明細
 - Dashboard 沒有篩選變數，避免公開連結可列出任何 label 值
 - CPU、記憶體與儲存空間使用率只彙總 Linux 主機資料，不包含 Windows 或 SNMP 裝置
+- 儲存空間使用率會取所有 Linux 主機根目錄 `/` 中的最高值，並採用 Linux `df` 的使用率計算方式
 
 建立公開連結：
 

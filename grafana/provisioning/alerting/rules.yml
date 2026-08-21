@@ -546,7 +546,7 @@ groups:
                 type: prometheus
                 uid: prometheus
               editorMode: code
-              expr: 100 * (1 - (node_filesystem_avail_bytes{job="node-exporter", mountpoint="/", fstype!~"tmpfs|overlay|squashfs"} / node_filesystem_size_bytes{job="node-exporter", mountpoint="/", fstype!~"tmpfs|overlay|squashfs"}))
+              expr: ceil(100 * (node_filesystem_size_bytes{job="node-exporter", mountpoint="/", fstype!~"tmpfs|overlay|squashfs"} - node_filesystem_free_bytes{job="node-exporter", mountpoint="/", fstype!~"tmpfs|overlay|squashfs"}) / (node_filesystem_size_bytes{job="node-exporter", mountpoint="/", fstype!~"tmpfs|overlay|squashfs"} - node_filesystem_free_bytes{job="node-exporter", mountpoint="/", fstype!~"tmpfs|overlay|squashfs"} + node_filesystem_avail_bytes{job="node-exporter", mountpoint="/", fstype!~"tmpfs|overlay|squashfs"}))
               instant: true
               intervalMs: 1000
               maxDataPoints: 43200

@@ -130,7 +130,7 @@ Grafana 另外把 `./grafana/dashboards` 掛載到 `/var/lib/grafana/dashboards`
 - `LinuxMemoryHigh`
   - `> 90%`，持續 `5m`
 - `LinuxRootDiskHigh`
-  - `> 85%`，持續 `10m`
+  - 依 Linux `df` 的根目錄 `/` 使用率 `> 85%`，持續 `10m`
 - `WindowsCpuHigh`
   - 目前實際為 `> 85%`，持續 `5m`
 - `WindowsMemoryHigh`
