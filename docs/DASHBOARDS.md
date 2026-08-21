@@ -197,6 +197,7 @@ Grafana dashboard 檔案使用 JSON 格式，而 JSON 本身不支援註解，�
 - Dashboard 沒有篩選變數，避免公開連結可列出任何 label 值
 - CPU、記憶體與儲存空間使用率只彙總 Linux 主機資料，不包含 Windows 或 SNMP 裝置
 - 儲存空間使用率會取所有 Linux 主機根目錄 `/` 中的最高值，並採用 Linux `df` 的使用率計算方式
+- 服務回應時間只彙總 `blackbox-http`、`role=public-web` 的公開 HTTP probe，以免 TCP 或 ICMP 探測影響網站延遲判讀
 
 建立公開連結：
 

@@ -49,9 +49,9 @@
       },
       "gridPos": { "h": 6, "w": 6, "x": 12, "y": 0 },
       "id": 3,
-      "description": "目前有 95% 的受監測服務可在此時間內完成回應。",
+      "description": "目前有 95% 的受監測公開 HTTP 服務可在此時間內完成回應。",
       "options": { "colorMode": "background", "graphMode": "area", "justifyMode": "center", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "textMode": "value_and_name", "wideLayout": true },
-      "targets": [{ "expr": "1000 * quantile(0.95, probe_duration_seconds)", "legendFormat": "95% 服務回應時間", "refId": "A" }],
+      "targets": [{ "expr": "1000 * quantile(0.95, probe_duration_seconds{job=\"blackbox-http\", role=\"public-web\"})", "legendFormat": "95% 公開服務回應時間", "refId": "A" }],
       "title": "服務回應時間",
       "type": "stat"
     },
@@ -192,13 +192,13 @@
     },
     {
       "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "description": "顯示各時間點有 95% 的受監測服務可在此時間內完成回應。",
+      "description": "顯示各時間點有 95% 的受監測公開 HTTP 服務可在此時間內完成回應。",
       "fieldConfig": { "defaults": { "color": { "mode": "continuous-BlYlRd" }, "decimals": 0, "unit": "ms" }, "overrides": [] },
       "gridPos": { "h": 8, "w": 12, "x": 12, "y": 26 },
       "id": 15,
       "options": { "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "single", "sort": "none" } },
-      "targets": [{ "expr": "1000 * quantile(0.95, probe_duration_seconds)", "legendFormat": "95% 服務回應時間", "refId": "A" }],
-      "title": "服務回應狀態",
+      "targets": [{ "expr": "1000 * quantile(0.95, probe_duration_seconds{job=\"blackbox-http\", role=\"public-web\"})", "legendFormat": "95% 公開服務回應時間", "refId": "A" }],
+      "title": "服務回應時間趨勢",
       "type": "timeseries"
     }
   ],
