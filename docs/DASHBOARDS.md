@@ -116,7 +116,7 @@ Grafana dashboard 檔案使用 JSON 格式，而 JSON 本身不支援註解，�
 
 - 主機磁碟 SMART 健康狀態（裝置、型號與介面）
 - NVMe SSD 剩餘壽命、磁碟溫度與 NVMe critical warning
-- 實體磁碟忙碌率與所有本機檔案系統使用率
+- 實體磁碟忙碌率與 Linux 主機根目錄使用率（`/`）
 - CPU 封裝／核心與 NVMe Composite 溫度
 
 補充判讀：
@@ -126,6 +126,7 @@ Grafana dashboard 檔案使用 JSON 格式，而 JSON 本身不支援註解，�
 - `NVMe SSD 剩餘壽命` 的名稱會顯示實際裝置與型號，例如 `nvme0 — 型號`；資料來自 SMART exporter 的 `exported_device` 與 `model_name` 標籤，不包含序號。
 - `NVMe 控制器警告與媒體錯誤累計` 的媒體錯誤是累積值，重點是觀察是否增加；critical warning 非零則需立即處理。
 - `磁碟目前溫度` 與 `實體磁碟忙碌率` 均使用 `裝置 — 型號` 顯示，例如 `nvme0n1 — ADATA SX8200PNP`，可直接對應實體磁碟。
+- `Linux 主機根目錄使用率（/）` 只顯示宿主機的 `/` 掛載點，不包含 EFI、tmpfs 或其他資料磁碟；其百分比會比照 Linux `df` 的使用率計算方式，不把 ext4 保留區塊顯示為一般已用空間。
 - `CPU 與 NVMe 溫度` 只保留 CPU 封裝／核心，以及每顆 NVMe 的 Composite 溫度；重複的 ACPI 與 NVMe 次要感測器不顯示。
 
 ## `network-edge-and-nas.json`

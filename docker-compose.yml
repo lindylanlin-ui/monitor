@@ -98,11 +98,13 @@ services:
     entrypoint:
       - /bin/sh
       - -c
-    # 這些參數讓容器內的 exporter 可以看到宿主機的 /proc、/sys、rootfs。
+    # snap Docker 會把容器可見的 / 隔離；真正的宿主機檔案系統位於
+    # /var/lib/snapd/hostfs。rootfs 要指向該視圖；/proc 與 /sys 則繼續使用
+    # 已掛入的 /host 路徑，因為 hostfs 不包含可讀取的虛擬檔案系統。
     command:
       - >
         exec /bin/node_exporter
-        --path.rootfs=/host
+        --path.rootfs=/host/var/lib/snapd/hostfs
         --path.procfs=/host/proc
         --path.sysfs=/host/sys
         --collector.textfile.directory=/var/lib/node_exporter/textfile
@@ -113,7 +115,8 @@ services:
       driver: none
     volumes:
       # 某些 Linux 發行版的根掛載不是 shared/slave，rslave 會導致容器無法啟動。
-      # 這裡改成一般唯讀掛載即可滿足 node-exporter 的主機檔案系統讀取需求。
+      # snap Docker 的真實宿主機視圖會位於容器內的
+      # /host/var/lib/snapd/hostfs，搭配上方的 --path.* 參數使用。
       - /:/host:ro
       # 主機端的 systemd timer 會把 Fail2ban 等自訂 metric 寫到此目錄；
       # node_exporter 僅以唯讀方式讀取，避免容器意外修改主機端輸出。

@@ -62,6 +62,8 @@ make bootstrap
 - `secrets/grafana-alerting/telegram_bot_token`
 - `secrets/grafana-alerting/telegram_chat_id`
 
+`make validate` 與 `make up` 都會先執行 `bootstrap`，因此可安全重複執行；它只補齊不存在的本機設定檔、runtime 目錄與 placeholder，不會覆寫既有的 `.env`、`*.local.yml` 或 secrets。
+
 ### 步驟 2：設定 `.env`
 
 至少調整：
@@ -178,6 +180,7 @@ make validate
 
 這會驗證：
 
+- 先由 `bootstrap` 補齊 Compose 需要的本機檔案與目錄
 - `docker compose` 設定是否可解析
 
 ### 步驟 2：啟動平台

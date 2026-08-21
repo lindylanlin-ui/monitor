@@ -123,9 +123,9 @@
       "id": 6,
       "options": { "minVizHeight": 75, "minVizWidth": 75, "orientation": "auto", "reduceOptions": { "calcs": [ "lastNotNull" ], "fields": "", "values": false }, "showThresholdLabels": false, "showThresholdMarkers": true },
       "targets": [
-        { "expr": "100 * (1 - node_filesystem_avail_bytes{job=\"node-exporter\", fstype!~\"tmpfs|overlay|squashfs\"} / node_filesystem_size_bytes{job=\"node-exporter\", fstype!~\"tmpfs|overlay|squashfs\"})", "instant": true, "legendFormat": "{{instance}} {{mountpoint}}", "refId": "A" }
+        { "expr": "ceil(100 * (node_filesystem_size_bytes{job=\"node-exporter\", mountpoint=\"/\", fstype!~\"tmpfs|overlay|squashfs\"} - node_filesystem_free_bytes{job=\"node-exporter\", mountpoint=\"/\", fstype!~\"tmpfs|overlay|squashfs\"}) / (node_filesystem_size_bytes{job=\"node-exporter\", mountpoint=\"/\", fstype!~\"tmpfs|overlay|squashfs\"} - node_filesystem_free_bytes{job=\"node-exporter\", mountpoint=\"/\", fstype!~\"tmpfs|overlay|squashfs\"} + node_filesystem_avail_bytes{job=\"node-exporter\", mountpoint=\"/\", fstype!~\"tmpfs|overlay|squashfs\"}))", "instant": true, "legendFormat": "{{instance}} /", "refId": "A" }
       ],
-      "title": "所有本機檔案系統使用率",
+      "title": "Linux 主機根目錄使用率（/）",
       "type": "gauge"
     },
     {

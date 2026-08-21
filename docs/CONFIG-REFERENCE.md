@@ -352,6 +352,8 @@ global:
 - 檔案系統
 - 網路介面
 
+snap Docker 裝置的 node_exporter 會把 `/host/var/lib/snapd/hostfs` 視為真正的宿主機 rootfs，並以此設定 `--path.rootfs`；`--path.procfs` 與 `--path.sysfs` 保持 `/host/proc`、`/host/sys`，因為 hostfs 不包含可讀取的虛擬檔案系統。不可直接把 rootfs 改回 `/host`，否則可能讀到 Snap 隔離環境的容量，導致 Grafana 顯示錯誤的磁碟使用率。
+
 自訂主機端指標：
 
 - Compose 已啟用 `--collector.textfile.directory=/var/lib/node_exporter/textfile`，並將 repository 的 `node-exporter/textfile/` 唯讀掛入該路徑。
