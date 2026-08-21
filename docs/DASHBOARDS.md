@@ -149,7 +149,6 @@ Grafana dashboard 檔案使用 JSON 格式，而 JSON 本身不支援註解，�
 - Synology 儲存空間使用率
 - Synology 容量摘要
 - Synology 磁碟健康狀態
-- Synology SSD 剩餘壽命
 - ER-X AP Uplink 流量
 - TP-Link AP 固定 Port 流量
 - TP-Link AP 在線狀態
@@ -172,7 +171,6 @@ Grafana dashboard 檔案使用 JSON 格式，而 JSON 本身不支援註解，�
 - `Synology 容量摘要` 直接顯示使用率、已用、可用、總容量，比時間線更適合判讀 NAS 容量
 - `Synology 磁碟健康狀態` 面板內 `Value = 1` 代表正常
 - `Value != 1` 代表非健康狀態，Grafana 會顯示為 `異常`
-- `Synology SSD 剩餘壽命` 使用 DSM 透過 SNMP 回報的 `diskRemainLife`；僅有支援此欄位的 SSD 會顯示資料
 - `ER-X AP Uplink 流量` 會用 `Router Port` 變數挑選 `ER-X` 上對應的實體介面，用來間接觀察像 `TP-Link Deco X20` 這類 AP 的 uplink 流量
 - `TP-Link AP 固定 Port 流量` 會直接固定觀察 `eth1`、`eth2`、`eth4`，對應 `living-room-ap-ping`、`study-room-ap-ping`、`guest-room-ap-ping`
 - `TP-Link AP 在線狀態` 會直接顯示所有 `role=access-point` 的 ICMP probe 結果；像 `study-room-ap-ping` 這種暫時未接線的設備，也能顯示離線但不一定需要告警
