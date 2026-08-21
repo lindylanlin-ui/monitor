@@ -174,27 +174,6 @@ services:
     networks:
       - monitoring
 
-  # NVIDIA GPU 監控採用官方 DCGM Exporter。
-  # GPU 驅動與 NVIDIA Container Toolkit 必須先可正常執行 nvidia-smi，
-  # 因此以 gpu profile 隔離，不影響沒有相容 GPU 的部署。
-  # 啟用方式請見 docs/SETUP-GUIDE.md。
-  dcgm-exporter:
-    image: nvcr.io/nvidia/k8s/dcgm-exporter:${DCGM_EXPORTER_VERSION}
-    container_name: monitoring-dcgm-exporter
-    profiles:
-      - gpu
-    restart: unless-stopped
-    # 此主機的 NVIDIA Container Toolkit 使用 CDI 模式；顯式選用 nvidia
-    # runtime 可避免 Compose 的 gpus: all 直接呼叫 NVIDIA hook 而啟動失敗。
-    runtime: nvidia
-    environment:
-      NVIDIA_VISIBLE_DEVICES: all
-      NVIDIA_DRIVER_CAPABILITIES: compute,utility
-    logging:
-      driver: none
-    networks:
-      - monitoring
-
   # Blackbox Exporter 用來做 HTTP / TCP 可用性探測，適合檢查網站、API、RDP、SSH 等服務。
   blackbox-exporter:
     image: prom/blackbox-exporter:${BLACKBOX_EXPORTER_VERSION}

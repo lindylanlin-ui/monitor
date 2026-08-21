@@ -24,7 +24,6 @@ Grafana 顯示的告警資料夾為「基礎設施告警」。告警規則的可
 | SSD 剩餘壽命過低 | `ssd_remaining_life_low` |
 | 磁碟溫度過高 | `disk_temperature_high` |
 | NVMe 控制器嚴重警告 | `nvme_critical_warning` |
-| NVIDIA GPU 溫度過高 | `nvidia_gpu_temperature_high` |
 | SNMP CPU 使用率過高 | `snmp_cpu_high` |
 | SNMP 記憶體使用率過高 | `snmp_memory_high` |
 | NAS 網路流量異常尖峰 | `nas_traffic_spike` |

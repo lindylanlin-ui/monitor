@@ -48,7 +48,7 @@
   - dashboard 看 `grafana/dashboards/infrastructure-overview.json`
   - 文件看 [SETUP-GUIDE.md](./SETUP-GUIDE.md) 與 [CONFIG-REFERENCE.md](./CONFIG-REFERENCE.md)
 
-- 主機硬體健康（SMART / SSD 壽命 / NVIDIA GPU）
+- 主機硬體健康（SMART / SSD 壽命）
   - 服務與掛載看 `docker-compose.yml`
   - Prometheus job 看 `prometheus/prometheus.yml`
   - dashboard 看 `grafana/dashboards/host-hardware-health.json`

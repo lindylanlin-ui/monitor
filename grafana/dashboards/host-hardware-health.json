@@ -80,7 +80,7 @@
         "defaults": {
           "color": { "mode": "thresholds" },
           "mappings": [
-            { "options": { "-1": { "color": "blue", "text": "此 GPU 未提供 XID 指標" } }, "type": "value" }
+            { "options": { "-1": { "color": "blue", "text": "此 NVMe 裝置未提供此指標" } }, "type": "value" }
           ],
           "thresholds": { "mode": "absolute", "steps": [ { "color": "green", "value": null }, { "color": "red", "value": 1 } ] }
         },
@@ -130,51 +130,6 @@
     },
     {
       "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "fieldConfig": { "defaults": { "max": 100, "min": 0, "unit": "percent" }, "overrides": [] },
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 24 },
-      "id": 7,
-      "options": { "legend": { "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "multi" } },
-      "targets": [
-        { "expr": "DCGM_FI_DEV_GPU_UTIL{job=\"dcgm-exporter\"}", "legendFormat": "GPU {{gpu}}", "refId": "A" },
-        { "expr": "DCGM_FI_DEV_MEM_COPY_UTIL{job=\"dcgm-exporter\"}", "legendFormat": "GPU {{gpu}} 記憶體控制器", "refId": "B" }
-      ],
-      "title": "NVIDIA GPU 使用率",
-      "type": "timeseries"
-    },
-    {
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "fieldConfig": { "defaults": { "unit": "celsius" }, "overrides": [ { "matcher": { "id": "byRegexp", "options": ".*power$" }, "properties": [ { "id": "unit", "value": "watt" } ] } ] },
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 24 },
-      "id": 8,
-      "options": { "legend": { "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "multi" } },
-      "targets": [
-        { "expr": "DCGM_FI_DEV_GPU_TEMP{job=\"dcgm-exporter\"}", "legendFormat": "GPU {{gpu}} temp", "refId": "A" },
-        { "expr": "DCGM_FI_DEV_POWER_USAGE{job=\"dcgm-exporter\"}", "legendFormat": "GPU {{gpu}} power", "refId": "B" }
-      ],
-      "title": "NVIDIA GPU 溫度與功耗",
-      "type": "timeseries"
-    },
-    {
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "fieldConfig": {
-        "defaults": {
-          "min": 0,
-          "thresholds": { "mode": "absolute", "steps": [ { "color": "green", "value": null }, { "color": "yellow", "value": 8192 }, { "color": "red", "value": 11264 } ] },
-          "unit": "mbytes"
-        },
-        "overrides": []
-      },
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 32 },
-      "id": 9,
-      "options": { "minVizHeight": 75, "minVizWidth": 75, "orientation": "auto", "reduceOptions": { "calcs": [ "lastNotNull" ], "fields": "", "values": false }, "showThresholdLabels": false, "showThresholdMarkers": true },
-      "targets": [
-        { "expr": "DCGM_FI_DEV_FB_USED{job=\"dcgm-exporter\"}", "instant": true, "legendFormat": "GPU {{gpu}}", "refId": "A" }
-      ],
-      "title": "NVIDIA GPU 已用顯示記憶體",
-      "type": "gauge"
-    },
-    {
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
       "fieldConfig": { "defaults": { "unit": "celsius" }, "overrides": [] },
       "gridPos": { "h": 8, "w": 12, "x": 12, "y": 32 },
       "id": 11,
@@ -191,7 +146,7 @@
   "refresh": "30s",
   "schemaVersion": 39,
   "style": "dark",
-  "tags": [ "monitoring", "hardware", "smart", "gpu" ],
+  "tags": [ "monitoring", "hardware", "smart" ],
   "templating": { "list": [] },
   "time": { "from": "now-24h", "to": "now" },
   "timepicker": {},

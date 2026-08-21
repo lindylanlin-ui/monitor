@@ -618,7 +618,7 @@ docker info --format '{{json .}}' | jq '{Driver, DockerRootDir, CgroupDriver, Cg
 
 照這個順序查，通常很快就能抓到根因。
 
-## 13. 主機硬體健康與 GPU 查修
+## 13. 主機硬體健康查修
 
 ### SMART target down 或沒有磁碟資料
 
@@ -639,27 +639,3 @@ curl -fsS --get 'http://127.0.0.1:9090/api/v1/query' \
 ```
 
 SMART exporter 必須以 root 權限存取宿主機的磁碟裝置；請勿為了排錯移除它的 `privileged`、`/dev` 或 `/run/udev` 掛載。
-
-### GPU panel 顯示 `No data`
-
-GPU profile 預設不啟用，先確認已啟動：
-
-```bash
-docker compose --profile gpu ps dcgm-exporter
-```
-
-接著在宿主機執行：
-
-```bash
-nvidia-smi
-```
-
-若 `nvidia-smi` 無法列出 GPU，問題在 NVIDIA 驅動或它與目前核心的相容性，不在 Grafana 或 Prometheus。先修復驅動並重新確認 `nvidia-smi`，再檢查 NVIDIA Container Toolkit 與 `dcgm-exporter` log：
-
-```bash
-docker compose --profile gpu logs --tail 100 dcgm-exporter
-curl -fsS --get 'http://127.0.0.1:9090/api/v1/query' \
-  --data-urlencode 'query=up{job="dcgm-exporter"}' | jq
-```
-
-若啟動訊息指出「invoking the NVIDIA Container Runtime Hook directly」或 CDI mode，確認 `docker info` 有 `nvidia` runtime，並使用本專案已設定的 `runtime: nvidia`；不要另行加入 `gpus: all`。

@@ -76,8 +76,6 @@ Grafana 另外把 `./grafana/dashboards` 掛載到 `/var/lib/grafana/dashboards`
   - 主機上 Docker 真實資料目錄，給 `cAdvisor` 掛載使用
 - `SMARTCTL_EXPORTER_VERSION`
   - 主機 HDD / SSD / NVMe SMART exporter 映像版本
-- `DCGM_EXPORTER_VERSION`
-  - NVIDIA DCGM Exporter 映像版本；只在 `gpu` profile 啟用時使用
 
 ### `prometheus/prometheus.yml`
 
@@ -157,8 +155,6 @@ Grafana 另外把 `./grafana/dashboards` 掛載到 `/var/lib/grafana/dashboards`
   - 磁碟溫度 `> 60°C`，持續 `10m`
 - `NvmeCriticalWarning`
   - NVMe 控制器 critical warning 非零，持續 `10m`
-- `NvidiaGpuTemperatureHigh`
-  - GPU 溫度 `> 83°C`，持續 `10m`；僅在啟用 GPU profile 後有資料
 
 ### `grafana/provisioning/alerting/templates.yml`
 
@@ -273,8 +269,6 @@ global:
 
 - `smartctl-exporter`
   - 固定抓取 compose 內的 SMART exporter，提供磁碟整體健康、溫度、NVMe 磨損與控制器告警
-- `dcgm-exporter`
-  - 固定抓取 NVIDIA DCGM Exporter；服務只在 `gpu` profile 啟用，未啟用時 target down 不會觸發一般 `TargetDown` 告警
 
 #### `job_name`
 

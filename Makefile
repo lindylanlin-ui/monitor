@@ -10,7 +10,7 @@ bootstrap:
 	@if [ ! -f prometheus/file_sd/icmp-services.local.yml ]; then printf '[]\n' > prometheus/file_sd/icmp-services.local.yml; fi
 	@if [ ! -f prometheus/file_sd/http-services.local.yml ]; then printf '[]\n' > prometheus/file_sd/http-services.local.yml; fi
 	@mkdir -p prometheus/data grafana/data grafana/runtime snmp/generated node-exporter/textfile
-	@chmod 0777 grafana/runtime
+	@if [ "$$(stat -c '%a' grafana/runtime)" != 777 ]; then chmod 0777 grafana/runtime; fi
 	@mkdir -p secrets/grafana-alerting
 	@if [ ! -f secrets/grafana-alerting/telegram_bot_token ]; then printf 'replace-me-with-your-telegram-bot-token\n' > secrets/grafana-alerting/telegram_bot_token; fi
 	@if [ ! -f secrets/grafana-alerting/telegram_chat_id ]; then printf 'replace-me-with-your-telegram-chat-id\n' > secrets/grafana-alerting/telegram_chat_id; fi
