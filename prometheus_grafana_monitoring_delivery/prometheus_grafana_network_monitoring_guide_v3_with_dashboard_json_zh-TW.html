@@ -1,0 +1,1945 @@
+<!DOCTYPE html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Prometheus + Grafana 基礎設施監控系統建置指南</title>
+<style>
+  :root{
+    --bg:#f6f8fb; --card:#ffffff; --text:#172033; --muted:#667085;
+    --line:#e4e7ec; --accent:#2563eb; --accent2:#0f766e;
+    --warn:#b45309; --danger:#b42318; --code:#101828; --codebg:#0b1220;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0; background:var(--bg); color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans TC","PingFang TC",
+      "Microsoft JhengHei",Arial,sans-serif; line-height:1.75;
+  }
+  .layout{display:grid; grid-template-columns:280px minmax(0,1fr); min-height:100vh}
+  aside{
+    position:sticky; top:0; height:100vh; overflow:auto;
+    border-right:1px solid var(--line); background:#fff; padding:28px 22px;
+  }
+  aside h1{font-size:18px; line-height:1.4; margin:0 0 18px}
+  aside a{display:block; color:#344054; text-decoration:none; padding:7px 9px; border-radius:8px; font-size:14px}
+  aside a:hover{background:#eff4ff; color:var(--accent)}
+  main{max-width:1100px; width:100%; margin:0 auto; padding:48px 48px 80px}
+  .hero{
+    background:linear-gradient(135deg,#0f172a,#1d4ed8);
+    color:#fff; border-radius:20px; padding:36px 40px; margin-bottom:32px;
+    box-shadow:0 16px 40px rgba(15,23,42,.18)
+  }
+  .hero h1{font-size:34px; margin:0 0 12px}
+  .hero p{color:#dbeafe; margin:6px 0}
+  section{
+    background:var(--card); border:1px solid var(--line); border-radius:16px;
+    padding:30px 32px; margin:22px 0; box-shadow:0 2px 10px rgba(16,24,40,.04)
+  }
+  h2{font-size:25px; margin:0 0 16px; scroll-margin-top:24px}
+  h3{font-size:19px; margin-top:28px}
+  h4{font-size:16px; margin-top:22px}
+  p{margin:10px 0}
+  .lead{font-size:17px}
+  .note,.tip,.warn,.danger{
+    border-left:4px solid; border-radius:10px; padding:14px 16px; margin:18px 0;
+    background:#f8fafc
+  }
+  .note{border-color:#2563eb;background:#eff6ff}
+  .tip{border-color:#0f766e;background:#ecfdf3}
+  .warn{border-color:#b45309;background:#fffaeb}
+  .danger{border-color:#b42318;background:#fef3f2}
+  table{width:100%; border-collapse:collapse; margin:16px 0 24px; font-size:14px}
+  th,td{border:1px solid var(--line); padding:10px 12px; text-align:left; vertical-align:top}
+  th{background:#f2f4f7; font-weight:700}
+  code{font-family:"SFMono-Regular",Consolas,"Liberation Mono",monospace}
+  pre{
+    background:var(--codebg); color:#e5e7eb; border-radius:12px; padding:18px;
+    overflow:auto; line-height:1.55; border:1px solid #1f2937; font-size:13px
+  }
+  pre code{color:inherit}
+  .arch{
+    white-space:pre; overflow:auto; background:#0b1220; color:#e5e7eb;
+    border-radius:12px; padding:18px; font-family:monospace; font-size:13px; line-height:1.45
+  }
+  ul,ol{padding-left:24px}
+  .steps li{margin:8px 0}
+  .badge{display:inline-block; font-size:12px; font-weight:700; padding:3px 8px; border-radius:999px; background:#eaf2ff; color:#1d4ed8}
+  .grid2{display:grid; grid-template-columns:1fr 1fr; gap:16px}
+  .small{font-size:13px; color:var(--muted)}
+  .footer{color:var(--muted); text-align:center; padding:24px 0 0}
+  @media (max-width:900px){
+    .layout{grid-template-columns:1fr}
+    aside{position:relative;height:auto;border-right:0;border-bottom:1px solid var(--line)}
+    main{padding:26px 18px 60px}
+    .grid2{grid-template-columns:1fr}
+    .hero{padding:28px 24px}
+    .hero h1{font-size:28px}
+  }
+  @media print{
+    aside{display:none}
+    .layout{display:block}
+    main{max-width:none;padding:0}
+    section,.hero{box-shadow:none;break-inside:avoid}
+    body{background:#fff}
+  }
+</style>
+</head>
+<body>
+<div class="layout">
+  <aside>
+    <h1>Prometheus + Grafana<br>監控系統建置指南</h1>
+    <a href="#overview">1. 整體架構</a>
+    <a href="#monitoring">2. 建議監控項目</a>
+    <a href="#blackbox">3. Blackbox Exporter</a>
+    <a href="#compare">4. Docker Compose vs 一般安裝</a>
+    <a href="#compose">5. Docker Compose 建置</a>
+    <a href="#prometheus-config">6. Prometheus 設定</a>
+    <a href="#blackbox-config">7. Blackbox 設定</a>
+    <a href="#grafana-ds">8. Grafana Datasource</a>
+    <a href="#dashboard-as-code">9. Dashboard 版控 / Provisioning</a>
+    <a href="#git-sync">10. Grafana Git Sync（選配）</a>
+    <a href="#start">11. 啟動與驗證</a>
+    <a href="#traffic">12. Cisco Port 流量計算</a>
+    <a href="#alert">13. Grafana 告警</a>
+    <a href="#telegram">14. Telegram</a>
+    <a href="#email">15. Email</a>
+    <a href="#native">16. 一般安裝方式</a>
+    <a href="#handover">17. 維護與交接</a>
+    <a href="#phases">18. 建議導入順序</a>
+    <a href="#references">20. 官方參考資料</a>
+  </aside>
+
+  <main>
+    <div class="hero">
+      <div class="badge">繁體中文教學版</div>
+      <h1>Prometheus + Grafana 基礎設施監控系統建置指南</h1>
+      <p>監控 Cisco Switch、FortiGate Firewall、VMware ESXi / VM，並透過 Grafana 發送 Email 與 Telegram 告警。</p>
+      <p class="small" style="color:#bfdbfe">適合第一次接觸 Prometheus / Grafana / Exporter 的人閱讀。</p>
+    </div>
+
+    <section id="overview">
+      <h2>1. 整體架構</h2>
+      <p class="lead">整套系統不只是 Prometheus + Grafana。因為 Cisco、FortiGate、VMware 使用的監控介面不同，所以需要 Exporter 當「翻譯員」。</p>
+      <div class="arch">Cisco Switch ──SNMP──────┐
+                         │
+FortiGate ───SNMP───────┼──> SNMP Exporter ─────┐
+   │                     │                        │
+   └──HTTPS API──────────┴──> FortiGate Exporter │
+                                                  │
+ESXi / vCenter ──API────────> VMware/vCenter     │
+                              採集元件            │
+                                                  ▼
+所有設備 ──Ping/TCP/HTTPS──> Blackbox Exporter -> Prometheus
+                                                  │
+                                                  ▼
+                                               Grafana
+                                                  │
+                                     ┌────────────┴───────────┐
+                                     ▼                        ▼
+                                   Email                  Telegram</div>
+
+      <div class="note">
+        <strong>白話理解：</strong>Exporter 就像翻譯員。Cisco / FortiGate 常講 SNMP，VMware 講 vSphere API，而 Prometheus 只想讀 Prometheus Metrics，所以由 Exporter 幫忙翻譯。
+      </div>
+    </section>
+
+    <section id="monitoring">
+      <h2>2. 建議監控項目</h2>
+
+      <h3>2.1 Cisco Switch</h3>
+      <table>
+        <tr><th>分類</th><th>建議監控</th></tr>
+        <tr><td>設備狀態</td><td>Alive / Down、Uptime、是否重新開機</td></tr>
+        <tr><td>資源</td><td>CPU 使用率、Memory 使用率</td></tr>
+        <tr><td>硬體</td><td>Temperature、Fan、Power Supply</td></tr>
+        <tr><td>Port</td><td>Up / Down、Speed、RX / TX 流量</td></tr>
+        <tr><td>Port 品質</td><td>Error、Discard、CRC Error</td></tr>
+        <tr><td>Port 容量</td><td>頻寬使用率 %</td></tr>
+        <tr><td>交換功能</td><td>STP、LACP / Port-channel</td></tr>
+        <tr><td>L3 Switch</td><td>BGP、OSPF Neighbor</td></tr>
+        <tr><td>PoE Switch</td><td>PoE Port 狀態、PoE Power 使用量</td></tr>
+        <tr><td>Stack</td><td>Stack Member 狀態</td></tr>
+      </table>
+
+      <p>Port Dashboard 不建議只顯示流量，最好同時顯示：</p>
+      <pre><code>Gi1/0/1
+Port Speed       : 1 Gbps
+Inbound          : 800 Mbps
+Outbound         : 150 Mbps
+Utilization      : 80 %
+Errors           : 0
+Discards         : 12
+Operational      : UP</code></pre>
+
+      <h3>2.2 FortiGate</h3>
+      <p>建議同時使用 SNMP + FortiGate API Exporter。</p>
+      <table>
+        <tr><th>分類</th><th>建議監控</th></tr>
+        <tr><td>設備</td><td>Firewall Alive / Down、Uptime</td></tr>
+        <tr><td>資源</td><td>CPU、Memory、Current Session / Max Session</td></tr>
+        <tr><td>Interface</td><td>Up / Down、RX / TX、Error、Drop</td></tr>
+        <tr><td>HA</td><td>Active / Passive、HA Member 狀態</td></tr>
+        <tr><td>VPN</td><td>IPsec Tunnel、SSL VPN Connection / User</td></tr>
+        <tr><td>SD-WAN</td><td>Latency、Jitter、Packet Loss</td></tr>
+        <tr><td>Routing</td><td>BGP Neighbor</td></tr>
+        <tr><td>硬體</td><td>Temperature、Fan、Power</td></tr>
+        <tr><td>授權</td><td>FortiGuard / License 狀態</td></tr>
+      </table>
+
+      <h3>2.3 VMware ESXi / VM</h3>
+      <div class="grid2">
+        <div>
+          <h4>ESXi Host</h4>
+          <ul>
+            <li>Host UP / DOWN</li>
+            <li>CPU Usage</li>
+            <li>CPU Ready / Contention</li>
+            <li>Memory Usage</li>
+            <li>Datastore Capacity / Free Space</li>
+            <li>NIC Traffic / Error</li>
+            <li>Hardware Sensor</li>
+            <li>VM 數量</li>
+            <li>Host Alarm</li>
+          </ul>
+        </div>
+        <div>
+          <h4>VM</h4>
+          <ul>
+            <li>Power On / Off</li>
+            <li>CPU Usage</li>
+            <li>Memory Usage</li>
+            <li>CPU Ready</li>
+            <li>Network RX / TX</li>
+            <li>Disk Usage / IOPS</li>
+            <li>VMware Tools 狀態</li>
+            <li>Snapshot 數量</li>
+            <li>Snapshot Age</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="warn">
+        <strong>很建議監控 Snapshot Age：</strong><br>
+        Snapshot &gt; 3 天：Warning<br>
+        Snapshot &gt; 7 天：Critical
+      </div>
+
+      <div class="note">
+        VMware 的採集元件要依實際 vCenter / ESXi 版本選擇。正式環境不建議直接沿用已停止維護的舊 exporter；導入前應先做相容性 POC。
+      </div>
+    </section>
+
+    <section id="blackbox">
+      <h2>3. 為什麼還需要 Blackbox Exporter？</h2>
+      <p>SNMP 正常，不代表設備真的可用。因此建議額外監控：</p>
+      <ul>
+        <li>Ping</li>
+        <li>TCP 22 / 443</li>
+        <li>HTTP / HTTPS</li>
+        <li>DNS</li>
+        <li>HTTPS Certificate 到期日</li>
+      </ul>
+      <pre><code>FortiGate
+────────────────────────────
+Ping             OK
+SNMP             OK
+HTTPS            OK
+CPU              32%
+Memory           58%
+Session          28%
+WAN1             UP
+WAN2             UP
+VPN-Taipei       UP
+VPN-Taichung     DOWN</code></pre>
+    </section>
+
+    <section id="compare">
+      <h2>4. Docker Compose vs 一般安裝</h2>
+      <table>
+        <tr><th>項目</th><th>Docker Compose</th><th>一般安裝</th></tr>
+        <tr><td>初次安裝</td><td>簡單</td><td>較多步驟</td></tr>
+        <tr><td>元件管理</td><td>集中</td><td>各自管理</td></tr>
+        <tr><td>版本控制</td><td>清楚寫在 image tag</td><td>要記 binary / package 版本</td></tr>
+        <tr><td>升級</td><td>pull + up -d</td><td>逐一升級</td></tr>
+        <tr><td>Rollback</td><td>相對容易</td><td>比較麻煩</td></tr>
+        <tr><td>設定集中</td><td>高</td><td>較分散</td></tr>
+        <tr><td>搬機</td><td>容易</td><td>較麻煩</td></tr>
+        <tr><td>交接</td><td>非常適合</td><td>需要較多 Linux 經驗</td></tr>
+        <tr><td>Debug OS</td><td>多一層 Docker</td><td>較直接</td></tr>
+      </table>
+
+      <div class="tip">
+        <strong>建議：</strong>如果是公司內部長期使用，而且未來要交接給其他人，優先使用 Docker Compose。
+      </div>
+    </section>
+
+    <section id="compose">
+      <h2>5. Docker Compose 建置</h2>
+
+      <h3>5.1 建議目錄</h3>
+      <pre><code>/opt/monitoring
+│
+├── compose.yml
+├── .env
+│
+├── prometheus
+│   └── prometheus.yml
+│
+├── blackbox
+│   └── blackbox.yml
+│
+├── grafana
+│   ├── provisioning
+│   │   ├── datasources
+│   │   │   └── prometheus.yml
+│   │   └── dashboards
+│   │       └── dashboards.yml
+│   │
+│   └── dashboards
+│       ├── Network
+│       │   ├── cisco-switch-overview.json
+│       │   └── fortigate-overview.json
+│       │
+│       └── VMware
+│           ├── esxi-overview.json
+│           └── vm-overview.json
+│
+├── fortigate
+│   └── fortigate-key.yml
+│
+├── .gitignore
+└── README.md</code></pre>
+
+      <div class="danger">
+        <strong>安全注意：</strong>.env、SMTP 密碼、FortiGate API Token 等秘密資訊不要提交到 Git。
+      </div>
+
+      <h3>5.2 compose.yml</h3>
+      <pre><code>services:
+
+  # =========================================================
+  # Prometheus
+  # 負責定期向所有 Exporter 抓取資料並儲存歷史監控數據
+  # =========================================================
+  prometheus:
+    image: prom/prometheus:v3.13.2
+    container_name: prometheus
+    restart: unless-stopped
+
+    volumes:
+      # Prometheus 主要設定檔
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+
+      # Prometheus 歷史監控資料
+      - prometheus_data:/prometheus
+
+    command:
+      # 指定 Prometheus 設定檔
+      - "--config.file=/etc/prometheus/prometheus.yml"
+
+      # 指定資料儲存目錄
+      - "--storage.tsdb.path=/prometheus"
+
+      # 保留 30 天監控資料
+      - "--storage.tsdb.retention.time=30d"
+
+    ports:
+      - "9090:9090"
+
+    networks:
+      - monitoring
+
+
+  # =========================================================
+  # SNMP Exporter
+  # 負責向 Cisco / FortiGate 等 SNMP 設備抓資料
+  # =========================================================
+  snmp-exporter:
+    image: prom/snmp-exporter:v0.30.1
+    container_name: snmp-exporter
+    restart: unless-stopped
+
+    ports:
+      - "9116:9116"
+
+    networks:
+      - monitoring
+
+
+  # =========================================================
+  # Blackbox Exporter
+  # 負責 Ping / TCP / HTTP / HTTPS 可用性檢查
+  # =========================================================
+  blackbox-exporter:
+    image: prom/blackbox-exporter:v0.28.0
+    container_name: blackbox-exporter
+    restart: unless-stopped
+
+    volumes:
+      - ./blackbox/blackbox.yml:/etc/blackbox_exporter/config.yml:ro
+
+    # ICMP Ping 需要 RAW Socket 權限
+    cap_add:
+      - NET_RAW
+
+    ports:
+      - "9115:9115"
+
+    networks:
+      - monitoring
+
+
+  # =========================================================
+  # FortiGate Exporter
+  # 使用 FortiGate HTTPS API 取得較完整的防火牆資訊
+  # =========================================================
+  fortigate-exporter:
+    image: prometheuscommunity/fortigate-exporter:v1.25.0
+    container_name: fortigate-exporter
+    restart: unless-stopped
+
+    volumes:
+      # FortiGate API Token 設定
+      - ./fortigate/fortigate-key.yml:/config/fortigate-key.yml:ro
+
+    command:
+      - "-auth-file"
+      - "/config/fortigate-key.yml"
+
+    networks:
+      - monitoring
+
+
+  # =========================================================
+  # Grafana
+  # Dashboard + Alerting
+  # =========================================================
+  grafana:
+    image: grafana/grafana:13.2.0
+    container_name: grafana
+    restart: unless-stopped
+
+    ports:
+      - "3000:3000"
+
+    environment:
+      # Grafana 初始管理員帳號
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD}
+
+      # -----------------------------------------------------
+      # SMTP Mail 設定
+      # -----------------------------------------------------
+      GF_SMTP_ENABLED: "true"
+
+      # SMTP Server，例如公司 Mail Server
+      GF_SMTP_HOST: ${SMTP_HOST}
+
+      # SMTP 登入帳號
+      GF_SMTP_USER: ${SMTP_USER}
+
+      # SMTP 密碼
+      GF_SMTP_PASSWORD: ${SMTP_PASSWORD}
+
+      # 告警寄件人
+      GF_SMTP_FROM_ADDRESS: ${SMTP_FROM_ADDRESS}
+
+      # 寄件人顯示名稱
+      GF_SMTP_FROM_NAME: "Grafana Monitoring"
+
+    volumes:
+      # Grafana Database / Dashboard / Alert 設定
+      - grafana_data:/var/lib/grafana
+
+      # Grafana Provisioning 設定
+      # 包含 Datasource 與 Dashboard Provider
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+
+      # Dashboard JSON 來源檔，必須納入 Git 版控
+      # :ro 代表 Container 只讀，避免正式環境直接改壞來源檔
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+
+    networks:
+      - monitoring
+
+
+# =========================================================
+# Docker Persistent Volume
+# Container 刪掉後資料仍然存在
+# =========================================================
+volumes:
+  prometheus_data:
+  grafana_data:
+
+
+# =========================================================
+# 監控系統專用 Docker Network
+# =========================================================
+networks:
+  monitoring:
+    driver: bridge</code></pre>
+
+      <h3>5.3 .env</h3>
+      <pre><code># =========================================================
+# Grafana 管理員
+# =========================================================
+GRAFANA_ADMIN_USER=admin
+
+# 正式環境請改成強密碼
+GRAFANA_ADMIN_PASSWORD=ChangeMe123456
+
+
+# =========================================================
+# SMTP
+# =========================================================
+
+# 範例：mail.company.com:587
+SMTP_HOST=mail.company.com:587
+
+SMTP_USER=grafana@company.com
+SMTP_PASSWORD=ChangeMe
+SMTP_FROM_ADDRESS=grafana@company.com</code></pre>
+
+      <p>限制檔案權限：</p>
+      <pre><code>chmod 600 .env</code></pre>
+
+      <p>Git 排除：</p>
+      <pre><code>.env
+fortigate/fortigate-key.yml</code></pre>
+    </section>
+
+    <section id="prometheus-config">
+      <h2>6. Prometheus 設定</h2>
+      <p>檔案：<code>prometheus/prometheus.yml</code></p>
+      <pre><code># =========================================================
+# Prometheus 全域設定
+# =========================================================
+global:
+
+  # 每 30 秒抓一次監控資料
+  scrape_interval: 30s
+
+  # 每 30 秒重新計算 Alert Rule
+  evaluation_interval: 30s
+
+
+scrape_configs:
+
+  # =======================================================
+  # Prometheus 自己
+  # =======================================================
+  - job_name: "prometheus"
+
+    static_configs:
+      - targets:
+          - "prometheus:9090"
+
+
+  # =======================================================
+  # Cisco Switch
+  #
+  # if_mib：
+  #   Port、流量、Error、Discard、Speed 等
+  #
+  # system：
+  #   Uptime、Device Description 等
+  #
+  # cisco_device：
+  #   Cisco CPU、Memory、Sensor、Power 等
+  # =======================================================
+  - job_name: "cisco-switch"
+
+    metrics_path: /snmp
+
+    params:
+      # 教學範例使用 SNMP v2
+      # 正式環境建議改 SNMP v3
+      auth:
+        - public_v2
+
+      module:
+        - if_mib
+        - system
+        - cisco_device
+
+    static_configs:
+      - targets:
+          # Core Switch
+          - "192.168.10.10"
+
+          # Access Switch
+          - "192.168.10.11"
+          - "192.168.10.12"
+
+    relabel_configs:
+      # 把設備 IP 傳給 SNMP Exporter
+      - source_labels:
+          - __address__
+        target_label: __param_target
+
+      # Grafana / Prometheus 顯示真正的設備 IP
+      - source_labels:
+          - __param_target
+        target_label: instance
+
+      # 實際請求 SNMP Exporter
+      - target_label: __address__
+        replacement: snmp-exporter:9116
+
+
+  # =======================================================
+  # FortiGate Port SNMP
+  # =======================================================
+  - job_name: "fortigate-snmp"
+
+    metrics_path: /snmp
+
+    params:
+      auth:
+        - public_v2
+
+      module:
+        - if_mib
+        - system
+
+    static_configs:
+      - targets:
+          - "192.168.20.1"
+
+    relabel_configs:
+      - source_labels:
+          - __address__
+        target_label: __param_target
+
+      - source_labels:
+          - __param_target
+        target_label: instance
+
+      - target_label: __address__
+        replacement: snmp-exporter:9116
+
+
+  # =======================================================
+  # FortiGate API Exporter
+  # =======================================================
+  - job_name: "fortigate-api"
+
+    metrics_path: /probe
+
+    static_configs:
+      - targets:
+          - "https://192.168.20.1"
+
+    relabel_configs:
+      - source_labels:
+          - __address__
+        target_label: __param_target
+
+      - source_labels:
+          - __param_target
+        target_label: instance
+
+      - target_label: __address__
+        replacement: fortigate-exporter:9710
+
+
+  # =======================================================
+  # Ping Monitoring
+  # =======================================================
+  - job_name: "ping"
+
+    metrics_path: /probe
+
+    params:
+      module:
+        - icmp
+
+    static_configs:
+      - targets:
+          # Cisco
+          - "192.168.10.10"
+          - "192.168.10.11"
+
+          # FortiGate
+          - "192.168.20.1"
+
+          # ESXi
+          - "192.168.30.11"
+          - "192.168.30.12"
+
+          # vCenter
+          - "192.168.30.10"
+
+    relabel_configs:
+      - source_labels:
+          - __address__
+        target_label: __param_target
+
+      - source_labels:
+          - __param_target
+        target_label: instance
+
+      - target_label: __address__
+        replacement: blackbox-exporter:9115</code></pre>
+
+      <div class="warn">
+        正式環境建議使用 SNMPv3。SNMPv1 / v2c 的 community string 不應視為安全的秘密資訊。
+      </div>
+    </section>
+
+    <section id="blackbox-config">
+      <h2>7. Blackbox Exporter 設定</h2>
+      <p>檔案：<code>blackbox/blackbox.yml</code></p>
+      <pre><code>modules:
+
+  # =======================================================
+  # ICMP Ping
+  # =======================================================
+  icmp:
+
+    # 使用 ICMP
+    prober: icmp
+
+    # 最多等待 5 秒
+    timeout: 5s
+
+
+  # =======================================================
+  # TCP Port 測試
+  #
+  # 例如：
+  # SSH 22
+  # HTTPS 443
+  # =======================================================
+  tcp_connect:
+
+    prober: tcp
+
+    timeout: 5s
+
+
+  # =======================================================
+  # HTTPS Monitoring
+  # =======================================================
+  https_2xx:
+
+    prober: http
+
+    timeout: 10s
+
+    http:
+      # 只接受 HTTP 2xx
+      valid_status_codes:
+        - 200
+        - 201
+        - 202
+        - 204
+
+      # 優先 IPv4
+      preferred_ip_protocol: ip4</code></pre>
+    </section>
+
+    <section id="grafana-ds">
+      <h2>8. Grafana 自動建立 Prometheus Datasource</h2>
+      <p>檔案：<code>grafana/provisioning/datasources/prometheus.yml</code></p>
+      <pre><code>apiVersion: 1
+
+datasources:
+
+  # =======================================================
+  # Prometheus Datasource
+  # Grafana 啟動後會自動建立
+  # =======================================================
+  - name: Prometheus
+
+    # Datasource 類型
+    type: prometheus
+
+    # 固定 Datasource UID
+    # Dashboard JSON 會引用這個 UID，讓不同 Grafana 環境都能穩定找到 Prometheus
+    uid: prometheus
+
+    # Grafana Server 直接連 Prometheus
+    access: proxy
+
+    # Docker Compose 內直接使用 Service Name
+    url: http://prometheus:9090
+
+    # 設成預設 Datasource
+    isDefault: true
+
+    editable: true</code></pre>
+    </section>
+
+    <section id="dashboard-as-code">
+      <h2>9. Grafana Dashboard 版控（Dashboard as Code）</h2>
+
+      <div class="danger">
+        <strong>前一版缺少的就是這一層。</strong><br>
+        如果 Dashboard 只在 Grafana Web UI 裡建立，它主要存在 Grafana Database 中；即使 compose.yml 與 Prometheus 設定都有進 Git，也不能完整重建監控畫面。
+      </div>
+
+      <h3>9.1 正確的版控架構</h3>
+      <div class="arch">Git Repository
+│
+├── compose.yml
+├── prometheus/
+├── blackbox/
+└── grafana/
+    ├── provisioning/
+    │   ├── datasources/prometheus.yml
+    │   └── dashboards/dashboards.yml
+    └── dashboards/
+        ├── Network/
+        │   ├── cisco-switch-overview.json
+        │   └── fortigate-overview.json
+        └── VMware/
+            ├── esxi-overview.json
+            └── vm-overview.json
+                     │
+                     ▼
+              Docker bind mount
+                     │
+                     ▼
+          /var/lib/grafana/dashboards
+                     │
+                     ▼
+           Grafana Provisioning
+                     │
+                     ▼
+                Dashboards</div>
+
+      <p>這樣 Git 才是真正的 <strong>Source of Truth</strong>。</p>
+
+      <h3>9.2 Dashboard Provider</h3>
+      <p>建立 <code>grafana/provisioning/dashboards/dashboards.yml</code>：</p>
+      <pre><code>apiVersion: 1
+
+providers:
+
+  # =======================================================
+  # Git 版控 Dashboard Provider
+  # =======================================================
+  - name: "version-controlled-dashboards"
+
+    # 一般單一 Organization 使用 1
+    orgId: 1
+
+    # Dashboard 從本機檔案讀取
+    type: file
+
+    # Git / 檔案刪除 Dashboard 時，允許 Grafana 同步刪除
+    disableDeletion: false
+
+    # 30 秒輪詢 Dashboard JSON
+    # Docker bind mount 某些環境的 filesystem watch event 不一定能傳進 Container；
+    # 大於 10 秒會使用 polling，較適合這種掛載方式。
+    updateIntervalSeconds: 30
+
+    # 正式環境禁止直接在 Grafana UI 儲存修改
+    # 避免 UI 已改、Git JSON 沒改，造成兩邊不一致
+    allowUiUpdates: false
+
+    options:
+      # Container 內 Dashboard JSON 的位置
+      path: /var/lib/grafana/dashboards
+
+      # 依實體資料夾建立 Grafana Folder
+      foldersFromFilesStructure: true</code></pre>
+
+      <div class="note">
+        使用 <code>foldersFromFilesStructure: true</code> 時，不要另外設定 provider 的 <code>folder</code> 或 <code>folderUid</code>。
+      </div>
+
+      <h3>9.3 Docker Compose 掛載</h3>
+      <pre><code>grafana:
+  image: grafana/grafana:13.2.0
+
+  volumes:
+    # Datasource、Dashboard Provider 等 Provisioning 設定
+    - ./grafana/provisioning:/etc/grafana/provisioning:ro
+
+    # Dashboard JSON：來源在 Git Repository
+    - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+
+    # Grafana runtime data / SQLite / plugin 等
+    - grafana_data:/var/lib/grafana</code></pre>
+
+      <h3>9.4 Prometheus Datasource UID 必須固定</h3>
+      <pre><code>apiVersion: 1
+
+datasources:
+  - name: Prometheus
+    type: prometheus
+
+    # Dashboard JSON 固定引用這個 UID
+    uid: prometheus
+
+    access: proxy
+    url: http://prometheus:9090
+    isDefault: true
+    editable: false</code></pre>
+
+      <p>Dashboard Panel 內可以穩定引用：</p>
+      <pre><code>{
+  "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+  }
+}</code></pre>
+
+      <h3>9.5 Dashboard 檔案結構</h3>
+      <pre><code>grafana/dashboards/
+├── Network/
+│   ├── cisco-switch-overview.json
+│   └── fortigate-overview.json
+└── VMware/
+    ├── esxi-overview.json
+    └── vm-overview.json</code></pre>
+
+      <p>Grafana UI 會依資料夾呈現：</p>
+      <pre><code>Dashboards
+├── Network
+│   ├── Cisco Switch Overview
+│   └── FortiGate Overview
+└── VMware
+    ├── ESXi Overview
+    └── VM Overview</code></pre>
+
+
+      <h3>9.6 真正的 Dashboard 設定檔：cisco-switch-overview.json</h3>
+
+      <div class="danger">
+        <strong>這個 JSON 才是真正的 Grafana Dashboard 設定檔。</strong><br>
+        前面的 <code>dashboards.yml</code> 只是告訴 Grafana「去哪裡找 Dashboard」；
+        真正定義 Panel、PromQL、版面、變數、Threshold 的是下面這個 JSON。
+      </div>
+
+      <p>實際檔案位置：</p>
+
+      <pre><code>grafana/dashboards/Network/cisco-switch-overview.json</code></pre>
+
+      <p>這個範例 Dashboard 包含：</p>
+      <ul>
+        <li>Switch UP / DOWN</li>
+        <li>Port Operational Status</li>
+        <li>Port RX Mbps</li>
+        <li>Port TX Mbps</li>
+        <li>Port Utilization %</li>
+        <li>Port Errors / sec</li>
+        <li>Port Discards / sec</li>
+        <li>Switch / Port 下拉變數</li>
+      </ul>
+
+      <pre><code>{
+  &quot;id&quot;: null,
+  &quot;uid&quot;: &quot;cisco-switch-overview&quot;,
+  &quot;title&quot;: &quot;Cisco Switch Overview&quot;,
+  &quot;tags&quot;: [
+    &quot;network&quot;,
+    &quot;cisco&quot;,
+    &quot;snmp&quot;
+  ],
+  &quot;timezone&quot;: &quot;browser&quot;,
+  &quot;editable&quot;: false,
+  &quot;graphTooltip&quot;: 1,
+  &quot;refresh&quot;: &quot;30s&quot;,
+  &quot;schemaVersion&quot;: 42,
+  &quot;version&quot;: 1,
+  &quot;time&quot;: {
+    &quot;from&quot;: &quot;now-6h&quot;,
+    &quot;to&quot;: &quot;now&quot;
+  },
+  &quot;timepicker&quot;: {},
+  &quot;annotations&quot;: {
+    &quot;list&quot;: [
+      {
+        &quot;builtIn&quot;: 1,
+        &quot;datasource&quot;: {
+          &quot;type&quot;: &quot;grafana&quot;,
+          &quot;uid&quot;: &quot;-- Grafana --&quot;
+        },
+        &quot;enable&quot;: true,
+        &quot;hide&quot;: true,
+        &quot;iconColor&quot;: &quot;rgba(0, 211, 255, 1)&quot;,
+        &quot;name&quot;: &quot;Annotations &amp; Alerts&quot;,
+        &quot;type&quot;: &quot;dashboard&quot;
+      }
+    ]
+  },
+  &quot;templating&quot;: {
+    &quot;list&quot;: [
+      {
+        &quot;name&quot;: &quot;device&quot;,
+        &quot;label&quot;: &quot;Switch&quot;,
+        &quot;type&quot;: &quot;query&quot;,
+        &quot;datasource&quot;: {
+          &quot;type&quot;: &quot;prometheus&quot;,
+          &quot;uid&quot;: &quot;prometheus&quot;
+        },
+        &quot;query&quot;: {
+          &quot;query&quot;: &quot;label_values(up{job=\&quot;cisco-switch\&quot;}, instance)&quot;,
+          &quot;refId&quot;: &quot;PrometheusVariableQueryEditor-VariableQuery&quot;
+        },
+        &quot;refresh&quot;: 1,
+        &quot;sort&quot;: 1,
+        &quot;multi&quot;: false,
+        &quot;includeAll&quot;: false,
+        &quot;current&quot;: {}
+      },
+      {
+        &quot;name&quot;: &quot;interface&quot;,
+        &quot;label&quot;: &quot;Port&quot;,
+        &quot;type&quot;: &quot;query&quot;,
+        &quot;datasource&quot;: {
+          &quot;type&quot;: &quot;prometheus&quot;,
+          &quot;uid&quot;: &quot;prometheus&quot;
+        },
+        &quot;query&quot;: {
+          &quot;query&quot;: &quot;label_values(ifHCInOctets{job=\&quot;cisco-switch\&quot;,instance=\&quot;$device\&quot;}, ifName)&quot;,
+          &quot;refId&quot;: &quot;PrometheusVariableQueryEditor-VariableQuery&quot;
+        },
+        &quot;refresh&quot;: 1,
+        &quot;sort&quot;: 1,
+        &quot;multi&quot;: true,
+        &quot;includeAll&quot;: true,
+        &quot;allValue&quot;: &quot;.*&quot;,
+        &quot;current&quot;: {}
+      }
+    ]
+  },
+  &quot;panels&quot;: [
+    {
+      &quot;id&quot;: 1,
+      &quot;type&quot;: &quot;stat&quot;,
+      &quot;title&quot;: &quot;Switch Status&quot;,
+      &quot;datasource&quot;: {
+        &quot;type&quot;: &quot;prometheus&quot;,
+        &quot;uid&quot;: &quot;prometheus&quot;
+      },
+      &quot;gridPos&quot;: {
+        &quot;x&quot;: 0,
+        &quot;y&quot;: 0,
+        &quot;w&quot;: 6,
+        &quot;h&quot;: 5
+      },
+      &quot;targets&quot;: [
+        {
+          &quot;refId&quot;: &quot;A&quot;,
+          &quot;expr&quot;: &quot;max(up{job=\&quot;cisco-switch\&quot;,instance=\&quot;$device\&quot;})&quot;,
+          &quot;instant&quot;: true,
+          &quot;legendFormat&quot;: &quot;Status&quot;
+        }
+      ],
+      &quot;options&quot;: {
+        &quot;reduceOptions&quot;: {
+          &quot;values&quot;: false,
+          &quot;calcs&quot;: [
+            &quot;lastNotNull&quot;
+          ],
+          &quot;fields&quot;: &quot;&quot;
+        },
+        &quot;orientation&quot;: &quot;auto&quot;,
+        &quot;textMode&quot;: &quot;auto&quot;,
+        &quot;colorMode&quot;: &quot;background&quot;
+      },
+      &quot;fieldConfig&quot;: {
+        &quot;defaults&quot;: {
+          &quot;mappings&quot;: [
+            {
+              &quot;type&quot;: &quot;value&quot;,
+              &quot;options&quot;: {
+                &quot;0&quot;: {
+                  &quot;text&quot;: &quot;DOWN&quot;
+                },
+                &quot;1&quot;: {
+                  &quot;text&quot;: &quot;UP&quot;
+                }
+              }
+            }
+          ],
+          &quot;thresholds&quot;: {
+            &quot;mode&quot;: &quot;absolute&quot;,
+            &quot;steps&quot;: [
+              {
+                &quot;color&quot;: &quot;red&quot;,
+                &quot;value&quot;: null
+              },
+              {
+                &quot;color&quot;: &quot;green&quot;,
+                &quot;value&quot;: 1
+              }
+            ]
+          }
+        },
+        &quot;overrides&quot;: []
+      }
+    },
+    {
+      &quot;id&quot;: 2,
+      &quot;type&quot;: &quot;stat&quot;,
+      &quot;title&quot;: &quot;Port Operational Status&quot;,
+      &quot;datasource&quot;: {
+        &quot;type&quot;: &quot;prometheus&quot;,
+        &quot;uid&quot;: &quot;prometheus&quot;
+      },
+      &quot;gridPos&quot;: {
+        &quot;x&quot;: 6,
+        &quot;y&quot;: 0,
+        &quot;w&quot;: 18,
+        &quot;h&quot;: 5
+      },
+      &quot;targets&quot;: [
+        {
+          &quot;refId&quot;: &quot;A&quot;,
+          &quot;expr&quot;: &quot;ifOperStatus{job=\&quot;cisco-switch\&quot;,instance=\&quot;$device\&quot;,ifName=~\&quot;$interface\&quot;}&quot;,
+          &quot;instant&quot;: true,
+          &quot;legendFormat&quot;: &quot;{{ifName}}&quot;
+        }
+      ],
+      &quot;options&quot;: {
+        &quot;reduceOptions&quot;: {
+          &quot;values&quot;: false,
+          &quot;calcs&quot;: [
+            &quot;lastNotNull&quot;
+          ],
+          &quot;fields&quot;: &quot;&quot;
+        },
+        &quot;orientation&quot;: &quot;horizontal&quot;,
+        &quot;textMode&quot;: &quot;auto&quot;,
+        &quot;colorMode&quot;: &quot;background&quot;
+      },
+      &quot;fieldConfig&quot;: {
+        &quot;defaults&quot;: {
+          &quot;mappings&quot;: [
+            {
+              &quot;type&quot;: &quot;value&quot;,
+              &quot;options&quot;: {
+                &quot;1&quot;: {
+                  &quot;text&quot;: &quot;UP&quot;
+                },
+                &quot;2&quot;: {
+                  &quot;text&quot;: &quot;DOWN&quot;
+                },
+                &quot;3&quot;: {
+                  &quot;text&quot;: &quot;TESTING&quot;
+                },
+                &quot;4&quot;: {
+                  &quot;text&quot;: &quot;UNKNOWN&quot;
+                },
+                &quot;5&quot;: {
+                  &quot;text&quot;: &quot;DORMANT&quot;
+                },
+                &quot;6&quot;: {
+                  &quot;text&quot;: &quot;NOT PRESENT&quot;
+                },
+                &quot;7&quot;: {
+                  &quot;text&quot;: &quot;LOWER LAYER DOWN&quot;
+                }
+              }
+            }
+          ],
+          &quot;thresholds&quot;: {
+            &quot;mode&quot;: &quot;absolute&quot;,
+            &quot;steps&quot;: [
+              {
+                &quot;color&quot;: &quot;red&quot;,
+                &quot;value&quot;: null
+              },
+              {
+                &quot;color&quot;: &quot;green&quot;,
+                &quot;value&quot;: 1
+              },
+              {
+                &quot;color&quot;: &quot;red&quot;,
+                &quot;value&quot;: 2
+              }
+            ]
+          }
+        },
+        &quot;overrides&quot;: []
+      }
+    },
+    {
+      &quot;id&quot;: 3,
+      &quot;type&quot;: &quot;timeseries&quot;,
+      &quot;title&quot;: &quot;Port RX Traffic (Mbps)&quot;,
+      &quot;datasource&quot;: {
+        &quot;type&quot;: &quot;prometheus&quot;,
+        &quot;uid&quot;: &quot;prometheus&quot;
+      },
+      &quot;gridPos&quot;: {
+        &quot;x&quot;: 0,
+        &quot;y&quot;: 5,
+        &quot;w&quot;: 12,
+        &quot;h&quot;: 8
+      },
+      &quot;targets&quot;: [
+        {
+          &quot;refId&quot;: &quot;A&quot;,
+          &quot;expr&quot;: &quot;rate(ifHCInOctets{job=\&quot;cisco-switch\&quot;,instance=\&quot;$device\&quot;,ifName=~\&quot;$interface\&quot;}[5m]) * 8 / 1000000&quot;,
+          &quot;legendFormat&quot;: &quot;{{ifName}}&quot;
+        }
+      ],
+      &quot;fieldConfig&quot;: {
+        &quot;defaults&quot;: {
+          &quot;unit&quot;: &quot;Mbits&quot;,
+          &quot;min&quot;: 0
+        },
+        &quot;overrides&quot;: []
+      },
+      &quot;options&quot;: {
+        &quot;legend&quot;: {
+          &quot;displayMode&quot;: &quot;table&quot;,
+          &quot;placement&quot;: &quot;bottom&quot;,
+          &quot;calcs&quot;: [
+            &quot;lastNotNull&quot;,
+            &quot;max&quot;
+          ]
+        },
+        &quot;tooltip&quot;: {
+          &quot;mode&quot;: &quot;multi&quot;,
+          &quot;sort&quot;: &quot;desc&quot;
+        }
+      }
+    },
+    {
+      &quot;id&quot;: 4,
+      &quot;type&quot;: &quot;timeseries&quot;,
+      &quot;title&quot;: &quot;Port TX Traffic (Mbps)&quot;,
+      &quot;datasource&quot;: {
+        &quot;type&quot;: &quot;prometheus&quot;,
+        &quot;uid&quot;: &quot;prometheus&quot;
+      },
+      &quot;gridPos&quot;: {
+        &quot;x&quot;: 12,
+        &quot;y&quot;: 5,
+        &quot;w&quot;: 12,
+        &quot;h&quot;: 8
+      },
+      &quot;targets&quot;: [
+        {
+          &quot;refId&quot;: &quot;A&quot;,
+          &quot;expr&quot;: &quot;rate(ifHCOutOctets{job=\&quot;cisco-switch\&quot;,instance=\&quot;$device\&quot;,ifName=~\&quot;$interface\&quot;}[5m]) * 8 / 1000000&quot;,
+          &quot;legendFormat&quot;: &quot;{{ifName}}&quot;
+        }
+      ],
+      &quot;fieldConfig&quot;: {
+        &quot;defaults&quot;: {
+          &quot;unit&quot;: &quot;Mbits&quot;,
+          &quot;min&quot;: 0
+        },
+        &quot;overrides&quot;: []
+      },
+      &quot;options&quot;: {
+        &quot;legend&quot;: {
+          &quot;displayMode&quot;: &quot;table&quot;,
+          &quot;placement&quot;: &quot;bottom&quot;,
+          &quot;calcs&quot;: [
+            &quot;lastNotNull&quot;,
+            &quot;max&quot;
+          ]
+        },
+        &quot;tooltip&quot;: {
+          &quot;mode&quot;: &quot;multi&quot;,
+          &quot;sort&quot;: &quot;desc&quot;
+        }
+      }
+    },
+    {
+      &quot;id&quot;: 5,
+      &quot;type&quot;: &quot;gauge&quot;,
+      &quot;title&quot;: &quot;Selected Port Utilization (%)&quot;,
+      &quot;datasource&quot;: {
+        &quot;type&quot;: &quot;prometheus&quot;,
+        &quot;uid&quot;: &quot;prometheus&quot;
+      },
+      &quot;gridPos&quot;: {
+        &quot;x&quot;: 0,
+        &quot;y&quot;: 13,
+        &quot;w&quot;: 8,
+        &quot;h&quot;: 7
+      },
+      &quot;targets&quot;: [
+        {
+          &quot;refId&quot;: &quot;A&quot;,
+          &quot;expr&quot;: &quot;100 * (max(rate(ifHCInOctets{job=\&quot;cisco-switch\&quot;,instance=\&quot;$device\&quot;,ifName=~\&quot;$interface\&quot;}[5m])) * 8) / (max(ifHighSpeed{job=\&quot;cisco-switch\&quot;,instance=\&quot;$device\&quot;,ifName=~\&quot;$interface\&quot;}) * 1000000)&quot;,
+          &quot;legendFormat&quot;: &quot;RX&quot;
+        },
+        {
+          &quot;refId&quot;: &quot;B&quot;,
+          &quot;expr&quot;: &quot;100 * (max(rate(ifHCOutOctets{job=\&quot;cisco-switch\&quot;,instance=\&quot;$device\&quot;,ifName=~\&quot;$interface\&quot;}[5m])) * 8) / (max(ifHighSpeed{job=\&quot;cisco-switch\&quot;,instance=\&quot;$device\&quot;,ifName=~\&quot;$interface\&quot;}) * 1000000)&quot;,
+          &quot;legendFormat&quot;: &quot;TX&quot;
+        }
+      ],
+      &quot;fieldConfig&quot;: {
+        &quot;defaults&quot;: {
+          &quot;unit&quot;: &quot;percent&quot;,
+          &quot;min&quot;: 0,
+          &quot;max&quot;: 100,
+          &quot;thresholds&quot;: {
+            &quot;mode&quot;: &quot;absolute&quot;,
+            &quot;steps&quot;: [
+              {
+                &quot;color&quot;: &quot;green&quot;,
+                &quot;value&quot;: null
+              },
+              {
+                &quot;color&quot;: &quot;orange&quot;,
+                &quot;value&quot;: 80
+              },
+              {
+                &quot;color&quot;: &quot;red&quot;,
+                &quot;value&quot;: 90
+              }
+            ]
+          }
+        },
+        &quot;overrides&quot;: []
+      },
+      &quot;options&quot;: {
+        &quot;reduceOptions&quot;: {
+          &quot;values&quot;: false,
+          &quot;calcs&quot;: [
+            &quot;lastNotNull&quot;
+          ],
+          &quot;fields&quot;: &quot;&quot;
+        },
+        &quot;orientation&quot;: &quot;auto&quot;,
+        &quot;showThresholdLabels&quot;: false,
+        &quot;showThresholdMarkers&quot;: true
+      }
+    },
+    {
+      &quot;id&quot;: 6,
+      &quot;type&quot;: &quot;timeseries&quot;,
+      &quot;title&quot;: &quot;Port Errors / sec&quot;,
+      &quot;datasource&quot;: {
+        &quot;type&quot;: &quot;prometheus&quot;,
+        &quot;uid&quot;: &quot;prometheus&quot;
+      },
+      &quot;gridPos&quot;: {
+        &quot;x&quot;: 8,
+        &quot;y&quot;: 13,
+        &quot;w&quot;: 8,
+        &quot;h&quot;: 7
+      },
+      &quot;targets&quot;: [
+        {
+          &quot;refId&quot;: &quot;A&quot;,
+          &quot;expr&quot;: &quot;rate(ifInErrors{job=\&quot;cisco-switch\&quot;,instance=\&quot;$device\&quot;,ifName=~\&quot;$interface\&quot;}[5m])&quot;,
+          &quot;legendFormat&quot;: &quot;{{ifName}} RX Error&quot;
+        },
+        {
+          &quot;refId&quot;: &quot;B&quot;,
+          &quot;expr&quot;: &quot;rate(ifOutErrors{job=\&quot;cisco-switch\&quot;,instance=\&quot;$device\&quot;,ifName=~\&quot;$interface\&quot;}[5m])&quot;,
+          &quot;legendFormat&quot;: &quot;{{ifName}} TX Error&quot;
+        }
+      ],
+      &quot;fieldConfig&quot;: {
+        &quot;defaults&quot;: {
+          &quot;unit&quot;: &quot;ops&quot;,
+          &quot;min&quot;: 0
+        },
+        &quot;overrides&quot;: []
+      },
+      &quot;options&quot;: {
+        &quot;legend&quot;: {
+          &quot;displayMode&quot;: &quot;table&quot;,
+          &quot;placement&quot;: &quot;bottom&quot;,
+          &quot;calcs&quot;: [
+            &quot;lastNotNull&quot;,
+            &quot;max&quot;
+          ]
+        },
+        &quot;tooltip&quot;: {
+          &quot;mode&quot;: &quot;multi&quot;,
+          &quot;sort&quot;: &quot;desc&quot;
+        }
+      }
+    },
+    {
+      &quot;id&quot;: 7,
+      &quot;type&quot;: &quot;timeseries&quot;,
+      &quot;title&quot;: &quot;Port Discards / sec&quot;,
+      &quot;datasource&quot;: {
+        &quot;type&quot;: &quot;prometheus&quot;,
+        &quot;uid&quot;: &quot;prometheus&quot;
+      },
+      &quot;gridPos&quot;: {
+        &quot;x&quot;: 16,
+        &quot;y&quot;: 13,
+        &quot;w&quot;: 8,
+        &quot;h&quot;: 7
+      },
+      &quot;targets&quot;: [
+        {
+          &quot;refId&quot;: &quot;A&quot;,
+          &quot;expr&quot;: &quot;rate(ifInDiscards{job=\&quot;cisco-switch\&quot;,instance=\&quot;$device\&quot;,ifName=~\&quot;$interface\&quot;}[5m])&quot;,
+          &quot;legendFormat&quot;: &quot;{{ifName}} RX Discard&quot;
+        },
+        {
+          &quot;refId&quot;: &quot;B&quot;,
+          &quot;expr&quot;: &quot;rate(ifOutDiscards{job=\&quot;cisco-switch\&quot;,instance=\&quot;$device\&quot;,ifName=~\&quot;$interface\&quot;}[5m])&quot;,
+          &quot;legendFormat&quot;: &quot;{{ifName}} TX Discard&quot;
+        }
+      ],
+      &quot;fieldConfig&quot;: {
+        &quot;defaults&quot;: {
+          &quot;unit&quot;: &quot;ops&quot;,
+          &quot;min&quot;: 0
+        },
+        &quot;overrides&quot;: []
+      },
+      &quot;options&quot;: {
+        &quot;legend&quot;: {
+          &quot;displayMode&quot;: &quot;table&quot;,
+          &quot;placement&quot;: &quot;bottom&quot;,
+          &quot;calcs&quot;: [
+            &quot;lastNotNull&quot;,
+            &quot;max&quot;
+          ]
+        },
+        &quot;tooltip&quot;: {
+          &quot;mode&quot;: &quot;multi&quot;,
+          &quot;sort&quot;: &quot;desc&quot;
+        }
+      }
+    }
+  ],
+  &quot;links&quot;: []
+}</code></pre>
+
+      <div class="note">
+        這份 Dashboard 預設 Prometheus job 為 <code>cisco-switch</code>，並使用
+        <code>ifHCInOctets</code>、<code>ifHCOutOctets</code>、<code>ifHighSpeed</code>、
+        <code>ifOperStatus</code>、<code>ifInErrors</code>、<code>ifOutErrors</code>、
+        <code>ifInDiscards</code>、<code>ifOutDiscards</code> 與 <code>ifName</code>。
+        若你的 SNMP Exporter 設定沒有 <code>ifName</code> label，可改成
+        <code>ifDescr</code> 或 <code>ifIndex</code>。
+      </div>
+
+      <h3>9.7 Dashboard 修改與 Git 流程</h3>
+
+      <div class="arch">開發 / 測試 Grafana 修改 Dashboard
+      │
+      ▼
+Export Dashboard JSON
+      │
+      ▼
+存到 grafana/dashboards/...
+      │
+      ▼
+git diff
+      │
+      ▼
+git add / git commit
+      │
+      ▼
+Merge Request / Pull Request
+      │
+      ▼
+正式環境 Deploy / git pull
+      │
+      ▼
+Grafana 自動讀取 JSON</div>
+
+      <pre><code>git status
+
+git diff grafana/dashboards/Network/cisco-switch-overview.json
+
+git add grafana/dashboards/Network/cisco-switch-overview.json
+
+git commit -m "feat(grafana): update Cisco switch dashboard"
+
+git push</code></pre>
+
+      <h3>9.8 為什麼 Production 設 allowUiUpdates: false？</h3>
+      <pre><code>Git JSON                 Production Grafana UI
+   │                              │
+CPU Warning = 80%          某人改成 90%
+   │                              │
+   └──────────── 不一致 ───────────┘</code></pre>
+      <p>下一次 provisioning 套用檔案時，Git 裡的內容仍可能覆蓋 Database 裡的 UI 修改。因此正式環境要把 Git 當唯一來源。</p>
+
+      <h3>9.9 Dashboard JSON 更新後要 restart 嗎？</h3>
+      <p>Dashboard JSON 本身通常不用 restart；provider 會依 <code>updateIntervalSeconds</code> 重新掃描。若修改 provider YAML、compose.yml 或 Grafana 環境變數，再重新建立 Grafana：</p>
+      <pre><code>docker compose up -d grafana</code></pre>
+
+      <h3>9.10 .gitignore</h3>
+      <pre><code># 秘密資訊不要進 Git
+.env
+fortigate/fortigate-key.yml
+
+# 暫存檔
+*.tmp
+*.bak
+.DS_Store
+
+# grafana/dashboards/*.json 不要忽略
+# Dashboard JSON 就是要進 Git 版控</code></pre>
+
+      <h3>9.11 版控 Dashboard 的好處</h3>
+      <table>
+        <tr><th>情境</th><th>處理方式</th></tr>
+        <tr><td>誰改了 Dashboard？</td><td>git log / git blame</td></tr>
+        <tr><td>修改前後差在哪？</td><td>git diff</td></tr>
+        <tr><td>新版有問題</td><td>git revert</td></tr>
+        <tr><td>監控主機壞掉</td><td>重新 clone repo + docker compose up</td></tr>
+        <tr><td>正式變更審核</td><td>Merge Request / Pull Request</td></tr>
+        <tr><td>交接</td><td>Repository 同時保存設定、Dashboard 與歷史</td></tr>
+      </table>
+    </section>
+
+    <section id="git-sync">
+      <h2>10. Grafana Git Sync（選配，Grafana 13.x）</h2>
+      <p>Grafana 13.x 也提供 Git Sync。如果希望直接在 Grafana UI 修改 Dashboard，並把變更同步回 Git 或建立 PR/MR，可以評估 Git Sync。</p>
+
+      <div class="arch">Grafana UI
+     │
+     ▼
+Grafana Git Sync ─────> Git Commit / PR
+     ▲                       │
+     └───────────────────────┘</div>
+
+      <table>
+        <tr><th>項目</th><th>File Provisioning + Git</th><th>Git Sync</th></tr>
+        <tr><td>Git 為 Source of Truth</td><td>是</td><td>是</td></tr>
+        <tr><td>初學者設定難度</td><td>較低</td><td>較高</td></tr>
+        <tr><td>UI 修改自動回 Git</td><td>否</td><td>是</td></tr>
+        <tr><td>Production Read-only</td><td>很容易做到</td><td>依權限 / workflow 設計</td></tr>
+        <tr><td>Git Credential</td><td>Grafana 不需要 Git 寫入權限</td><td>Grafana 需連 Git Provider</td></tr>
+      </table>
+
+      <div class="tip">
+        <strong>本教學主線建議先用 File Provisioning + Git。</strong><br>
+        結構更單純、容易交接，也符合「改 JSON → Git Review → Deploy」的正式維運流程。日後需要直接從 Grafana UI 走 Git workflow 時，再升級成 Git Sync。
+      </div>
+
+      <p>若公司使用 GitLab 且 Grafana 為 OSS，可評估 Grafana 的 Pure Git repository 類型連接 GitLab；Token 等 Git 憑證不要寫進 Repository。</p>
+    </section>
+
+    <section id="start">
+      <h2>11. 啟動與驗證</h2>
+      <ol class="steps">
+        <li>進入目錄：</li>
+      </ol>
+      <pre><code>cd /opt/monitoring</code></pre>
+
+      <p>檢查 Compose：</p>
+      <pre><code>docker compose config</code></pre>
+
+      <p>啟動：</p>
+      <pre><code>docker compose up -d</code></pre>
+
+      <p>查看狀態：</p>
+      <pre><code>docker compose ps</code></pre>
+
+      <p>應看到類似：</p>
+      <pre><code>NAME                  STATUS
+prometheus            Up
+grafana               Up
+snmp-exporter         Up
+blackbox-exporter     Up
+fortigate-exporter    Up</code></pre>
+
+      <p>Grafana：</p>
+      <pre><code>http://監控主機IP:3000</code></pre>
+
+      <p>Prometheus：</p>
+      <pre><code>http://監控主機IP:9090</code></pre>
+
+      <div class="tip">
+        第一階段先不要急著做 Dashboard。先到 Prometheus 的 Targets 確認所有 job 都是 <strong>UP</strong>。
+      </div>
+    </section>
+
+    <section id="traffic">
+      <h2>12. Cisco Port 流量怎麼計算？</h2>
+
+      <p><code>ifHCInOctets</code> 是累積 Byte，不是 Mbps，所以要用 <code>rate()</code> 算每秒增加量。</p>
+
+      <h3>RX bit/s</h3>
+      <pre><code>rate(ifHCInOctets[5m]) * 8</code></pre>
+
+      <h3>TX bit/s</h3>
+      <pre><code>rate(ifHCOutOctets[5m]) * 8</code></pre>
+
+      <h3>轉 Mbps</h3>
+      <pre><code>rate(ifHCInOctets[5m]) * 8 / 1000000</code></pre>
+
+      <h3>計算 Port 使用率 %</h3>
+      <pre><code>(
+  rate(ifHCInOctets[5m]) * 8
+)
+/
+(
+  ifHighSpeed * 1000000
+)
+* 100</code></pre>
+
+      <div class="note">
+        對 1 Gbps / 10 Gbps 等高速介面，應優先使用 64-bit counter，例如 ifHCInOctets / ifHCOutOctets。
+      </div>
+    </section>
+
+    <section id="alert">
+      <h2>13. Grafana 告警設計</h2>
+
+      <table>
+        <tr><th>項目</th><th>Warning</th><th>Critical</th></tr>
+        <tr><td>Device Down</td><td>-</td><td>持續 2 分鐘</td></tr>
+        <tr><td>Important Port Down</td><td>-</td><td>持續 1 分鐘</td></tr>
+        <tr><td>Port Utilization</td><td>&gt;80% 10m</td><td>&gt;90% 5m</td></tr>
+        <tr><td>CPU</td><td>&gt;80% 10m</td><td>&gt;90% 5m</td></tr>
+        <tr><td>Memory</td><td>&gt;85% 10m</td><td>&gt;95% 5m</td></tr>
+        <tr><td>Ping</td><td>-</td><td>Fail 2m</td></tr>
+        <tr><td>Packet Loss</td><td>&gt;2%</td><td>&gt;5%</td></tr>
+        <tr><td>Datastore Free</td><td>&lt;15%</td><td>&lt;10%</td></tr>
+        <tr><td>VPN Tunnel</td><td>-</td><td>Down 2m</td></tr>
+        <tr><td>ESXi Host</td><td>-</td><td>Down 2m</td></tr>
+      </table>
+
+      <div class="warn">
+        不要把所有 Access Port Down 都送告警。使用者關電腦就會一直告警。真正值得告警的是 Uplink、Trunk、Firewall Port、WAN、Server Port、ESXi Port、Core Link、Port-channel。
+      </div>
+
+      <h3>Dashboard Threshold 與 Alert Rule 不一樣</h3>
+      <p>Dashboard Threshold 只是讓 Panel 顏色變色；真正會發通知的是 Alert Rule。</p>
+
+      <div class="arch">Prometheus Query
+      ↓
+Grafana Expression
+      ↓
+Threshold
+      ↓
+For 5 minutes
+      ↓
+Alert FIRING
+      ↓
+Contact Point
+      ↓
+Email + Telegram</div>
+
+      <h3>設備 Down 告警範例</h3>
+      <pre><code>up{job="cisco-switch"}</code></pre>
+
+      <p>正常 = 1，異常 = 0。Grafana 可設定：</p>
+      <pre><code>WHEN
+up
+IS BELOW
+1
+
+Pending period:
+2m</code></pre>
+    </section>
+
+    <section id="telegram">
+      <h2>14. Telegram 告警</h2>
+
+      <ol class="steps">
+        <li>在 Telegram 找 <strong>BotFather</strong></li>
+        <li>輸入 <code>/newbot</code></li>
+        <li>建立 Bot</li>
+        <li>取得 Bot API Token</li>
+        <li>取得 Chat ID</li>
+        <li>Grafana → Alerting → Contact points → Add contact point</li>
+        <li>選擇 Telegram</li>
+        <li>填入 Bot Token 與 Chat ID</li>
+        <li>按 Test 測試</li>
+      </ol>
+
+      <p>建議 Critical 告警格式：</p>
+      <pre><code>🔴 [CRITICAL]
+
+Device: CORE-SW-01
+IP: 192.168.10.10
+Problem: Device unreachable
+Duration: 2m</code></pre>
+    </section>
+
+    <section id="email">
+      <h2>15. Email 告警</h2>
+      <p>Grafana OSS 需要先設定 SMTP，再建立 Email Contact Point。</p>
+
+      <p>可以建立一個 Contact Point：</p>
+      <pre><code>Contact Point: Infra-Alert
+
+Integration 1
+Email
+infra@company.com
+
+Integration 2
+Telegram
+IT Monitoring Group</code></pre>
+
+      <p>這樣同一個 Alert 可以同時寄 Email + Telegram。</p>
+    </section>
+
+    <section id="native">
+      <h2>16. 一般安裝方式</h2>
+
+      <p>不用 Docker 時，每一個元件都直接跑在 Linux 上，通常交給 systemd 管理：</p>
+      <div class="arch">Linux
+│
+├─ prometheus process
+├─ grafana-server process
+├─ snmp_exporter process
+├─ blackbox_exporter process
+└─ fortigate_exporter process
+
+全部交給 systemd</div>
+
+      <h3>16.1 Prometheus</h3>
+      <pre><code>sudo useradd \
+  --system \
+  --no-create-home \
+  --shell /usr/sbin/nologin \
+  prometheus
+
+sudo mkdir -p /etc/prometheus
+sudo mkdir -p /var/lib/prometheus</code></pre>
+
+      <p>下載並安裝 binary：</p>
+      <pre><code>wget https://github.com/prometheus/prometheus/releases/download/v3.13.2/prometheus-3.13.2.linux-amd64.tar.gz
+
+tar xvf prometheus-3.13.2.linux-amd64.tar.gz
+
+sudo cp prometheus-3.13.2.linux-amd64/prometheus /usr/local/bin/
+sudo cp prometheus-3.13.2.linux-amd64/promtool /usr/local/bin/</code></pre>
+
+      <p><code>/etc/systemd/system/prometheus.service</code></p>
+      <pre><code>[Unit]
+
+# Prometheus Service 說明
+Description=Prometheus Monitoring Server
+
+# 等網路啟動完成
+After=network-online.target
+
+
+[Service]
+
+# 使用 prometheus 帳號執行
+User=prometheus
+Group=prometheus
+
+# Prometheus 執行檔
+ExecStart=/usr/local/bin/prometheus \
+  --config.file=/etc/prometheus/prometheus.yml \
+  --storage.tsdb.path=/var/lib/prometheus \
+  --storage.tsdb.retention.time=30d
+
+# 程式異常時自動重新啟動
+Restart=on-failure
+
+
+[Install]
+
+# 開機自動啟動
+WantedBy=multi-user.target</code></pre>
+
+      <p>啟動：</p>
+      <pre><code>sudo systemctl daemon-reload
+sudo systemctl enable --now prometheus
+
+systemctl status prometheus
+journalctl -u prometheus -f</code></pre>
+
+      <h3>16.2 SNMP Exporter</h3>
+      <pre><code>wget https://github.com/prometheus/snmp_exporter/releases/download/v0.30.1/snmp_exporter-0.30.1.linux-amd64.tar.gz</code></pre>
+
+      <p>systemd 概念：</p>
+      <pre><code>[Unit]
+Description=Prometheus SNMP Exporter
+After=network-online.target
+
+[Service]
+
+# 使用專用帳號
+User=snmp-exporter
+
+# 啟動 SNMP Exporter
+ExecStart=/usr/local/bin/snmp_exporter \
+  --config.file=/etc/snmp_exporter/snmp.yml
+
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target</code></pre>
+
+      <h3>16.3 常見設定位置</h3>
+      <pre><code>/etc/grafana/grafana.ini
+/etc/prometheus/prometheus.yml
+/etc/snmp_exporter/snmp.yml
+/etc/blackbox_exporter/blackbox.yml</code></pre>
+
+      <div class="note">
+        一般安裝的優點是服務直接跑在 OS 上，比較容易追 systemd / journal；缺點是元件多時，升級、版本控管、搬機與交接比較麻煩。
+      </div>
+    </section>
+
+    <section id="handover">
+      <h2>17. 維護與交接</h2>
+
+      <h3>Docker Compose 常用指令</h3>
+      <pre><code># 查看所有服務
+docker compose ps
+
+# 啟動
+docker compose up -d
+
+# 停止
+docker compose down
+
+# 查看 Grafana Log
+docker compose logs -f grafana
+
+# 查看 Prometheus Log
+docker compose logs -f prometheus
+
+# 修改 Prometheus Config 後
+docker compose restart prometheus
+
+# 升級 Image
+docker compose pull
+docker compose up -d</code></pre>
+
+      <h3>建議交接目錄</h3>
+      <pre><code>monitoring/
+│
+├── compose.yml
+├── prometheus/
+├── blackbox/
+├── fortigate/
+├── grafana/
+│   ├── provisioning/
+│   │   ├── datasources/
+│   │   └── dashboards/
+│   └── dashboards/
+│       ├── Network/
+│       └── VMware/
+├── README.md
+└── .env.example</code></pre>
+
+      <h3>Dashboard 版控日常操作</h3>
+      <pre><code># 拉最新監控設定
+git pull
+
+# 查看 Dashboard 修改內容
+git diff grafana/dashboards/
+
+# 查看 Dashboard 歷史
+git log -- grafana/dashboards/
+
+# 查看 Grafana 是否成功重新載入
+docker compose logs -f grafana</code></pre>
+
+      <div class="tip">
+        交接文件至少要記錄：主機 IP、Grafana URL、設備清單、SNMPv3 帳號管理方式、SMTP、Telegram Bot 管理方式、Dashboard Git 工作流、Dashboard JSON 目錄、備份方式、升級方式、常用 PromQL、Alert 說明。
+      </div>
+    </section>
+
+    <section id="phases">
+      <h2>18. 建議導入順序</h2>
+
+      <h3>Phase 1：監控平台</h3>
+      <ul>
+        <li>Prometheus</li>
+        <li>Grafana</li>
+        <li>SNMP Exporter</li>
+        <li>Blackbox Exporter</li>
+      </ul>
+
+      <h3>Phase 2：Cisco</h3>
+      <ul>
+        <li>Device UP / DOWN</li>
+        <li>Ping</li>
+        <li>CPU</li>
+        <li>Memory</li>
+        <li>Temperature</li>
+        <li>Port UP / DOWN</li>
+        <li>RX / TX</li>
+        <li>Bandwidth %</li>
+        <li>Error / Discard</li>
+      </ul>
+
+      <h3>Phase 3：FortiGate</h3>
+      <ul>
+        <li>CPU / Memory / Sessions</li>
+        <li>Port / WAN</li>
+        <li>HA</li>
+        <li>VPN</li>
+        <li>SD-WAN</li>
+        <li>License</li>
+      </ul>
+
+      <h3>Phase 4：VMware</h3>
+      <ul>
+        <li>ESXi Host</li>
+        <li>VM</li>
+        <li>Datastore</li>
+        <li>Snapshot</li>
+      </ul>
+
+      <h3>Phase 5：Alert</h3>
+      <p>建議至少區分兩級：</p>
+      <pre><code>severity="warning"
+
+severity="critical"</code></pre>
+
+      <div class="tip">
+        <strong>最推薦的實作順序：</strong><br>
+        一台全新的 Linux 主機 → 安裝 Docker → 建立 /opt/monitoring → 啟動 Prometheus / Grafana → 接第一台 Cisco Switch → 先確認 Port Traffic、CPU、Memory、溫度真的進到 Grafana，再逐步擴充 FortiGate 與 VMware。
+      </div>
+    </section>
+
+    <section>
+      <h2>19. 最終建議架構</h2>
+      <div class="arch">                    ┌── Cisco ─────── SNMP ─────┐
+                    │                            │
+                    ├── FortiGate ─── SNMP ─────┤
+                    │       │                    │
+                    │       └── HTTPS API ──┐    │
+                    │                       │    │
+                    ├── ESXi/vCenter ── API │    │
+                    │                       │    │
+                    └── All Devices ─ Ping │    │
+                                            ▼    ▼
+                                        Exporters
+                                            │
+                                            ▼
+                                      Prometheus
+                                            │
+                                            ▼
+                                         Grafana
+                                            │
+                           ┌────────────────┼────────────────┐
+                           ▼                ▼                ▼
+                     Dashboard JSON       Mail           Telegram
+                           │
+                           ▼
+                    Git Version Control</div>
+
+      <p><strong>部署方式：</strong>正式環境優先採用 Docker Compose；一般 systemd 安裝保留給特殊環境或學習用途。</p>
+    </section>
+
+
+    <section id="references">
+      <h2>20. 官方參考資料</h2>
+      <ul>
+        <li><a href="https://grafana.com/docs/grafana/latest/administration/provisioning/" target="_blank" rel="noopener">Grafana Provisioning</a></li>
+        <li><a href="https://grafana.com/docs/grafana/latest/visualizations/dashboards/build-dashboards/view-dashboard-json-model/" target="_blank" rel="noopener">Dashboard JSON Model</a></li>
+        <li><a href="https://grafana.com/docs/grafana/latest/as-code/observability-as-code/git-sync/" target="_blank" rel="noopener">Grafana Git Sync</a></li>
+        <li><a href="https://grafana.com/docs/grafana/latest/as-code/observability-as-code/git-sync/provisioned-dashboards/" target="_blank" rel="noopener">Work with provisioned dashboards in Git Sync</a></li>
+      </ul>
+    </section>
+    <div class="footer">
+      Prometheus + Grafana 基礎設施監控系統建置指南｜Dashboard Git 版控修訂版
+    </div>
+  </main>
+</div>
+</body>
+</html>
