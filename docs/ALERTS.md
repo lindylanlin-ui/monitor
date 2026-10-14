@@ -46,7 +46,7 @@ Grafana 顯示的告警資料夾為「基礎設施告警」。告警規則的可
 
 ## Proxy 公開路由異常
 
-`proxy_public_route_intermittent_failure` 專門監測 `tuffy-grafana`、`tuffy-home`、`tuffy-file`、`tuffy-resume`、`tuffy-stock` 與 `tuffy-xmas` 六條公開 proxy 路由。它會在同一路由 3 分鐘內出現至少 2 次 Blackbox probe 失敗時立即進入 Alerting，並由 `telegram-monitoring` 在 30 秒分組等待後通知。
+`proxy_public_route_intermittent_failure` 監測公開 `/healthz` 入口；各應用程式的同機健康狀態由 `blackbox-http-internal` 直接探測。它會在同一路由 3 分鐘內出現至少 2 次 Blackbox probe 失敗時立即進入 Alerting，並由 `telegram-monitoring` 在 30 秒分組等待後通知。
 
 這條規則補足通用「服務探測失敗」規則只能偵測連續 2 分鐘失敗的限制，適合發現容器仍顯示 `Up`、但 Docker network、Nginx 或上游轉送間歇失效的情況。
 

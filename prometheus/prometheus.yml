@@ -89,14 +89,33 @@ scrape_configs:
 
   # 監控 HTTP 服務可用性，例如網站、NAS 管理頁、API。
   - job_name: blackbox-http
+    scrape_timeout: 25s
     metrics_path: /probe
     params:
       module:
-        - http_2xx
+        - http_public_edge
+    file_sd_configs:
+      - files:
+          - /etc/prometheus/file_sd/http-services.local.yml
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [service]
+        regex: (.+)
+        target_label: instance
+      - target_label: __address__
+        replacement: blackbox-exporter:9115
+
+  # 監控同一台主機上的內部服務，不繞公開 DNS、Cloudflare 或 NAT loopback。
+  - job_name: blackbox-http-internal
+    metrics_path: /probe
+    params:
+      module:
+        - http_internal
     file_sd_configs:
       - files:
           - /etc/prometheus/file_sd/http-services.yml
-          - /etc/prometheus/file_sd/http-services.local.yml
+          - /etc/prometheus/file_sd/http-services.internal.yml
     relabel_configs:
       - source_labels: [__address__]
         target_label: __param_target

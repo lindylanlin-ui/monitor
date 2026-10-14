@@ -199,6 +199,7 @@ services:
       - ./logs:/var/log/project
     networks:
       - monitoring
+      - proxy
 
   # SNMP Exporter 用來監控 NAS、Router、交換器等無法安裝 exporter 的設備。
   snmp-exporter:
@@ -228,3 +229,6 @@ networks:
   # 單獨的 monitoring 網路，讓各服務彼此用服務名稱互通。
   monitoring:
     name: monitoring
+  proxy:
+    external: true
+    name: proxy_default

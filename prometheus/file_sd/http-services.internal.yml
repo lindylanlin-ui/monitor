@@ -1,0 +1,6 @@
+# 同機內部服務 target；由 Blackbox Exporter 直接走 Docker network。
+# 這裡不放公開網域，避免把 Cloudflare、NAT loopback 或登入轉址納入服務健康判斷。
+- targets: ["http://temp-markdown:8090/healthz"]
+  labels:
+    service: tuffy-file-internal
+    role: internal-service

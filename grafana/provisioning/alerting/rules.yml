@@ -106,7 +106,7 @@ groups:
                 type: prometheus
                 uid: prometheus
               editorMode: code
-              expr: max by (instance, job) (probe_success{job=~"blackbox-http|blackbox-tcp"})
+              expr: max by (instance, job) (probe_success{job=~"blackbox-http-internal|blackbox-tcp"})
               instant: true
               intervalMs: 1000
               maxDataPoints: 43200
@@ -175,7 +175,7 @@ groups:
                 type: prometheus
                 uid: prometheus
               editorMode: code
-              expr: sum_over_time((1 - probe_success{job="blackbox-http", role="public-web", service=~"tuffy-(grafana|home|file|resume|stock|xmas)"})[3m:30s])
+              expr: sum_over_time((1 - probe_success{job="blackbox-http", role="public-web", service="tuffy-public-edge"})[3m:30s])
               instant: true
               intervalMs: 1000
               maxDataPoints: 43200
@@ -215,8 +215,8 @@ groups:
         executionErrorState: Error
         for: 0s
         annotations:
-          summary: "{{ range $k, $v := $values }}{{ if (match \"B[0-9]+\" $k) }}{{ if index $v.Labels \"service\" }}{{ index $v.Labels \"service\" }}{{ else }}Proxy 公開路由{{ end }} 在 3 分鐘內多次探測失敗{{ end }}{{ end }}"
-          description: "{{ range $k, $v := $values }}{{ if (match \"B[0-9]+\" $k) }}{{ if index $v.Labels \"service\" }}{{ index $v.Labels \"service\" }}{{ else }}Proxy 公開路由{{ end }} 在過去 3 分鐘內至少 2 次 Blackbox probe 失敗。容器可能仍顯示 Up；請檢查 Nginx、Docker network 與對應上游服務。{{ end }}{{ end }}"
+          summary: "{{ range $k, $v := $values }}{{ if (match \"B[0-9]+\" $k) }}{{ if index $v.Labels \"service\" }}{{ index $v.Labels \"service\" }}{{ else }}公開入口{{ end }} 在 3 分鐘內多次探測失敗{{ end }}{{ end }}"
+          description: "{{ range $k, $v := $values }}{{ if (match \"B[0-9]+\" $k) }}{{ if index $v.Labels \"service\" }}{{ index $v.Labels \"service\" }}{{ else }}公開入口{{ end }} 在過去 3 分鐘內至少 2 次 Blackbox probe 失敗；內部服務健康狀態請查看 internal probe。{{ end }}{{ end }}"
         labels:
           severity: critical
         isPaused: false

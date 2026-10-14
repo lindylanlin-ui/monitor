@@ -10,6 +10,26 @@ modules:
       preferred_ip_protocol: ip4
       valid_status_codes: []
       method: GET
+  # 公開入口專用健康檢查：不跟隨轉址，並容許常見的 3xx。
+  # 目前 target 是 /healthz，正常結果應為 200；容許 3xx 可避免日後保留舊路徑時
+  # 因登入或尾端斜線轉址產生不必要的 probe failure。
+  http_public_edge:
+    prober: http
+    timeout: 20s
+    http:
+      preferred_ip_protocol: ip4
+      no_follow_redirects: true
+      valid_status_codes: [200, 301, 302, 303, 307, 308]
+      method: GET
+  # 內部服務專用健康檢查，不經公開網域、Cloudflare 或登入轉址。
+  http_internal:
+    prober: http
+    timeout: 10s
+    http:
+      preferred_ip_protocol: ip4
+      no_follow_redirects: true
+      valid_status_codes: [200]
+      method: GET
   tcp_connect:
     prober: tcp
     timeout: 5s

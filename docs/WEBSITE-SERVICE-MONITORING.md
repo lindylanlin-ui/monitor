@@ -6,26 +6,28 @@
 
 | 用途 | 來源檔 |
 | --- | --- |
-| 站點專屬 URL 與 service label | `prometheus/file_sd/http-services.local.yml`（被 Git 忽略） |
+| 公開入口 URL 與 service label | `prometheus/file_sd/http-services.local.yml`（被 Git 忽略） |
+| 同機內部服務 target | `prometheus/file_sd/http-services.internal.yml` |
 | 可分享的 target 範本 | `prometheus/file_sd/http-services.local.example.yml` |
-| HTTP probe job 與 local target 載入 | `prometheus/prometheus.yml` |
-| Blackbox HTTP 探測模組 | `prometheus/blackbox.yml` 的 `http_2xx` |
+| 公開 HTTP probe job | `prometheus/prometheus.yml` 的 `blackbox-http` |
+| 內部 HTTP probe job | `prometheus/prometheus.yml` 的 `blackbox-http-internal` |
+| Blackbox HTTP 探測模組 | `prometheus/blackbox.yml` 的 `http_public_edge`、`http_internal` |
 | Grafana dashboard 來源 | `grafana/dashboards/website-service-overview.json` |
 | 告警規則 | `grafana/provisioning/alerting/rules.yml` |
 | 告警調整細節 | [ALERTS.md](./ALERTS.md) |
 
-Blackbox Exporter 每 30 秒以 HTTP `GET` 探測 target。`http_2xx` 模組以 HTTP 成功回應為基本健康條件；主要指標如下：
+Blackbox Exporter 每 30 秒以 HTTP `GET` 探測 target。公開入口使用不跟隨轉址的 `http_public_edge` 模組；同機服務使用直接 Docker network 的 `http_internal` 模組。主要指標如下：
 
 - `probe_success`：`1` 代表探測成功，`0` 代表失敗。
 - `probe_http_status_code`：最近一次 HTTP 狀態碼。
 - `probe_duration_seconds`：完整探測耗時。
 - `probe_ssl_earliest_cert_expiry`：最早到期的 TLS 憑證時間；僅 HTTPS target 有資料。
 
-所有網站服務都必須使用 `role: public-web`。Dashboard、慢回應與 TLS 告警皆以此 label 篩選。
+公開入口使用 `role: public-web`；同機服務使用 `role: internal-service`。Dashboard、慢回應與 TLS 告警只篩選公開入口，服務探測失敗告警則只對內部 job 與 TCP job 生效。
 
 ## 新增網站服務
 
-1. 編輯本機檔案 `prometheus/file_sd/http-services.local.yml`。實際 URL 不要放進可提交的 `http-services.yml`。
+1. 編輯本機檔案 `prometheus/file_sd/http-services.local.yml`。公開網站監控應優先指向不需登入、固定回 `200` 的 `/healthz`。
 2. 新增一筆 target，`service` 使用唯一、穩定的小寫 kebab-case 名稱：
 
    ```yaml
@@ -94,9 +96,10 @@ Dashboard 的固定 UID 是 `website-service-overview`，datasource UID 是 `pro
 
 ## 調整或新增告警
 
-目前公開網站的專用規則為：
+目前公開入口與內部服務的專用規則為：
 
-- `proxy_public_route_intermittent_failure`：指定的 proxy 公開路由在 3 分鐘內至少 2 次 probe 失敗即告警。
+- `proxy_public_route_intermittent_failure`：公開 `/healthz` 在 3 分鐘內至少 2 次 probe 失敗即告警。
+- `service_probe_failed`：同機內部 HTTP 或 TCP probe 連續失敗 2 分鐘即告警。
 - `public_web_slow_response`：回應時間超過 2 秒持續 5 分鐘。
 - `public_web_tls_certificate_expiring`：TLS 憑證剩餘少於 21 天持續 1 小時。
 
