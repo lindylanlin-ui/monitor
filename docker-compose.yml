@@ -136,12 +136,12 @@ services:
       - /bin/sh
       - -c
     command:
-      # snap 版 Docker 的 containerd socket 在 /var/run/snap.docker/containerd/containerd.sock。
-      # 明確指定可避免 /var/run 掛載下的 /run/containerd 與宿主機其他 runtime 路徑混淆，
-      # 導致 cAdvisor 只抓到 systemd cgroup、Grafana 的 Docker dashboard 全部 No data。
+      # 目前主機的 Docker-managed containerd socket 位於
+      # /var/run/docker/containerd/containerd.sock；/var/run/containerd 是另一個 runtime。
+      # 明確指定可避免 cAdvisor 只抓到 systemd cgroup、Grafana 的 Docker dashboard 全部 No data。
       - >
         exec /usr/bin/entrypoint.sh
-        --containerd=/var/run/snap.docker/containerd/containerd.sock
+        --containerd=/var/run/docker/containerd/containerd.sock
         >> /var/log/project/cadvisor.log 2>&1
     logging:
       driver: none
@@ -152,9 +152,9 @@ services:
       - /:/rootfs:ro
       - /var/run:/var/run:ro
       - /sys:/sys:ro
-      # Docker 的資料目錄依安裝方式不同而異。
-      # 一般 apt 安裝常見為 /var/lib/docker，snap 安裝常見為 /var/snap/docker/common/var-lib-docker。
-      - ${DOCKER_ROOT_DIR}:/var/lib/docker:ro
+      # Docker 的資料目錄依安裝方式不同而異；容器內也掛在相同路徑，
+      # 讓 cAdvisor 能使用 Docker API 回報的 DockerRootDir 讀取 filesystem stats。
+      - ${DOCKER_ROOT_DIR}:${DOCKER_ROOT_DIR}:ro
       - /dev/disk:/dev/disk:ro
       - ./logs:/var/log/project
     networks:

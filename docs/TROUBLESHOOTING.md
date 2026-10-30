@@ -293,20 +293,17 @@ docker logs --tail 80 monitoring-cadvisor
 
 這就可以很明確知道問題不在 Grafana，而在 cAdvisor 沒正確接上 Docker runtime。
 
-如果你的 Docker 是 snap 安裝版，還要特別注意一個重開機後常見陷阱：
+如果 Docker 的資料目錄使用 snap 常見的 `/var/snap/docker/common/var-lib-docker`，不要只依照安裝方式猜 socket 路徑；應以 `dockerd` 的 `--containerd` 參數與實際 listening socket 為準。
 
-- 宿主機真正的 socket 常在 `/run/snap.docker/containerd/containerd.sock`
-- 但 cAdvisor 預設會找 `/run/containerd/containerd.sock`
-- 如果同時把整個 `/var/run` 掛進容器，又另外把 snap 的 containerd 目錄掛到 `/run/containerd`，重開後 cAdvisor 仍可能實際看到宿主機原本的 `/run/containerd`
-- 這種情況下 Prometheus 的 `up{job="cadvisor"}` 仍然會是 `1`，但 `container_label_com_docker_compose_project` / `container_label_com_docker_compose_service` 會全部消失，Grafana 的 `Docker 總覽` 就會整頁 `No data`
+這台主機的 Docker-managed containerd socket 是 `/var/run/docker/containerd/containerd.sock`，而 `/var/run/containerd/containerd.sock` 是另一個 runtime。兩者接錯時，Prometheus 的 `up{job="cadvisor"}` 仍然會是 `1`，但 `container_label_com_docker_compose_project` / `container_label_com_docker_compose_service` 會消失，Grafana 的 `Docker 總覽` 就會整頁 `No data`。
 
 這個 repo 目前的修法是讓 cAdvisor 明確使用：
 
 ```bash
---containerd=/var/run/snap.docker/containerd/containerd.sock
+--containerd=/var/run/docker/containerd/containerd.sock
 ```
 
-這樣比把 snap 路徑額外 bind 到 `/run/containerd` 更穩定。
+同時把 `${DOCKER_ROOT_DIR}` 掛到容器內相同路徑，讓 cAdvisor 能讀取 Docker API 回報的 `DockerRootDir` 與 filesystem stats。
 
 ### 第 6 步：查 Docker runtime 路徑
 
@@ -323,7 +320,7 @@ docker info --format '{{json .}}' | jq '{Driver, DockerRootDir, CgroupDriver, Cg
 如果你是 snap Docker，很常需要注意：
 
 - `DockerRootDir` 可能是 `/var/snap/docker/common/var-lib-docker`
-- `containerd.sock` 可能在 `/run/snap.docker/containerd/containerd.sock`
+- Docker-managed `containerd.sock` 需以 `dockerd` 的 `--containerd` 參數確認；本機目前是 `/var/run/docker/containerd/containerd.sock`
 
 ### 第 7 步：查 cAdvisor 目前到底掛了哪些路徑
 
@@ -339,10 +336,11 @@ docker inspect monitoring-cadvisor --format '{{json .Mounts}}' | jq
 
 ### 第 8 步：這次的實際修正
 
-這次你的主機是 snap Docker，所以在 [docker-compose.yml](../docker-compose.yml) 補了：
+這次在 [docker-compose.yml](../docker-compose.yml) 對齊了 Docker runtime 與資料目錄：
 
 ```yaml
-- /run/snap.docker/containerd:/run/containerd:ro
+- ${DOCKER_ROOT_DIR}:${DOCKER_ROOT_DIR}:ro
+--containerd=/var/run/docker/containerd/containerd.sock
 ```
 
 補完後重啟：
